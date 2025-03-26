@@ -1,13 +1,14 @@
-
 import React, { useEffect, useRef, useState } from 'react';
+import { Link } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
 import Hero from '@/components/Hero';
 import EnrollmentSteps from '@/components/EnrollmentSteps';
 import ProgramCard from '@/components/ProgramCard';
 import Testimonial from '@/components/Testimonial';
 import Footer from '@/components/Footer';
-import { ArrowRight, Calendar, Clock, CheckSquare } from 'lucide-react';
+import { ArrowRight, Calendar, LogIn, UserPlus } from 'lucide-react';
 import { cn } from "@/lib/utils";
+import { Button } from '@/components/ui/button';
 
 // Mock data for programs
 const programs = [
@@ -176,6 +177,40 @@ const Index = () => {
       <Navbar />
       
       <main>
+        {/* Hero Banner with Login/Register Buttons */}
+        <section id="home" className="py-24 md:py-32 relative bg-gradient-to-r from-blue-600 to-indigo-700 text-white">
+          <div className="container-padding max-w-6xl mx-auto text-center">
+            <div className="mb-8">
+              <div className="h-16 w-16 rounded-xl bg-white flex items-center justify-center text-primary mx-auto mb-6">
+                <span className="text-primary font-bold text-3xl">S</span>
+              </div>
+              <h1 className="heading-xl mb-6">
+                Streamlining <span className="text-blue-200">High School</span> Enrollment
+              </h1>
+              <p className="text-xl md:text-2xl mb-8 max-w-3xl mx-auto text-blue-100">
+                Your path to academic success begins here. A simple, efficient enrollment process designed for today's students.
+              </p>
+              
+              <div className="flex flex-col sm:flex-row justify-center gap-4 md:gap-6">
+                <Link to="/login">
+                  <Button size="lg" className="w-full sm:w-auto bg-white text-primary hover:bg-blue-50">
+                    <LogIn className="mr-2 h-5 w-5" /> 
+                    Log In
+                  </Button>
+                </Link>
+                <Link to="/register">
+                  <Button size="lg" className="w-full sm:w-auto bg-transparent border-2 border-white hover:bg-white/10">
+                    <UserPlus className="mr-2 h-5 w-5" /> 
+                    Register
+                  </Button>
+                </Link>
+              </div>
+            </div>
+            
+            <div className="hidden md:block absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-background to-transparent"></div>
+          </div>
+        </section>
+        
         <Hero />
         
         {/* Programs Section */}
@@ -315,7 +350,7 @@ const Index = () => {
           </div>
         </section>
         
-        {/* CTA Section */}
+        {/* CTA Section with Login/Register Buttons */}
         <section id="cta" className="py-20 bg-primary text-white">
           <div className="container-padding">
             <div className="max-w-4xl mx-auto text-center">
@@ -327,19 +362,18 @@ const Index = () => {
                 Our team is ready to guide you through every step of the process.
               </p>
               <div className="flex flex-col sm:flex-row justify-center items-center space-y-4 sm:space-y-0 sm:space-x-6">
-                <a 
-                  href="#start-enrollment" 
-                  className="btn-primary bg-white text-primary hover:bg-white/90 px-8 py-3 text-lg"
-                >
-                  Start Enrollment
-                </a>
-                <a 
-                  href="#contact" 
-                  className="flex items-center space-x-2 text-white hover:text-white/80 transition-colors"
-                >
-                  <span>Contact Admissions</span>
-                  <ArrowRight size={18} />
-                </a>
+                <Link to="/login">
+                  <Button size="lg" className="w-full sm:w-auto bg-white text-primary hover:bg-white/90 px-8 py-3 text-lg">
+                    <LogIn className="mr-2 h-5 w-5" /> 
+                    Log In
+                  </Button>
+                </Link>
+                <Link to="/register">
+                  <Button variant="outline" size="lg" className="border-white text-white hover:bg-white/10">
+                    <UserPlus className="mr-2 h-5 w-5" /> 
+                    Register Now
+                  </Button>
+                </Link>
               </div>
             </div>
           </div>

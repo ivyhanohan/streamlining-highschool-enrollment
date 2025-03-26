@@ -32,7 +32,7 @@ const Testimonial: React.FC<TestimonialProps> = ({
         <Quote size={20} />
       </div>
       
-      <p className="text-foreground/80 mb-6 italic relative">
+      <p className="text-foreground/80 mb-6 italic relative z-10">
         "{quote}"
       </p>
       
