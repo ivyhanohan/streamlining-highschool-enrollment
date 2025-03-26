@@ -11,9 +11,9 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Eye, EyeOff, LogIn } from 'lucide-react';
 
-// Form validation schema
+// Form validation schema with more flexible email validation for admin
 const formSchema = z.object({
-  email: z.string().email({ message: "Please enter a valid email address" }),
+  email: z.string().min(1, { message: "Email is required" }),
   password: z.string().min(6, { message: "Password must be at least 6 characters" }),
 });
 
@@ -89,7 +89,7 @@ const Login = () => {
                   <FormItem>
                     <FormLabel>Email</FormLabel>
                     <FormControl>
-                      <Input placeholder="your.email@example.com" {...field} />
+                      <Input placeholder="admin@school.edu" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -122,6 +122,12 @@ const Login = () => {
                   </FormItem>
                 )}
               />
+              
+              <div className="bg-blue-50 p-3 rounded-md border border-blue-100">
+                <p className="text-sm text-blue-700">
+                  <strong>Admin Login:</strong> admin@school.edu / admin123
+                </p>
+              </div>
               
               <Button type="submit" className="w-full">
                 <LogIn className="mr-2 h-4 w-4" /> Log in
