@@ -1,5 +1,4 @@
-
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,6 +11,7 @@ import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Upload, FileText, ArrowRight, Save } from 'lucide-react';
+import PaymentForm from "@/components/PaymentForm";
 
 // Form validation schema
 const formSchema = z.object({
@@ -38,6 +38,8 @@ type FormValues = z.infer<typeof formSchema>;
 const Enrollment = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
+  const [showPayment, setShowPayment] = useState(false);
+  const [formData, setFormData] = useState<FormValues | null>(null);
   
   // Initialize form
   const form = useForm<FormValues>({
@@ -63,17 +65,48 @@ const Enrollment = () => {
   });
 
   const onSubmit = (values: FormValues) => {
-    // Mock submission (in a real app, this would send data to a server)
-    console.log("Enrollment form data:", values);
+    // Save the form data for later submission after payment
+    setFormData(values);
+    // Show the payment form
+    setShowPayment(true);
+  };
+
+  const handlePaymentComplete = () => {
+    console.log("Enrollment form data:", formData);
     
     toast({
-      title: "Enrollment Submitted",
-      description: "Your enrollment application has been submitted successfully.",
+      title: "Enrollment Completed",
+      description: "Your enrollment application has been submitted and payment received.",
     });
     
     // Navigate to dashboard
     navigate("/student/dashboard");
   };
+
+  const handlePaymentCancel = () => {
+    setShowPayment(false);
+  };
+
+  // If payment screen is showing, display only the payment component
+  if (showPayment) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-12 px-4">
+        <div className="max-w-5xl mx-auto">
+          <div className="text-center mb-8">
+            <h1 className="text-3xl font-bold mb-4">Payment</h1>
+            <p className="text-lg text-muted-foreground">
+              Please complete your payment to finalize your enrollment.
+            </p>
+          </div>
+          
+          <PaymentForm 
+            onPaymentComplete={handlePaymentComplete}
+            onCancel={handlePaymentCancel}
+          />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-12 px-4">
@@ -442,7 +475,7 @@ const Enrollment = () => {
                       <Save className="mr-2 h-4 w-4" /> Save Draft
                     </Button>
                     <Button type="submit">
-                      Submit Application <ArrowRight className="ml-2 h-4 w-4" />
+                      Continue to Payment <ArrowRight className="ml-2 h-4 w-4" />
                     </Button>
                   </div>
                 </div>
