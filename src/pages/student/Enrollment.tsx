@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,11 +8,20 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Upload, FileText, ArrowRight, Save } from 'lucide-react';
+import { FileText, ArrowRight, Save, Upload, Trash2 } from 'lucide-react';
 import PaymentForm from "@/components/PaymentForm";
+
+// Required documents
+const requiredDocuments = [
+  { id: 1, name: "Birth Certificate", description: "Original or certified true copy", required: true },
+  { id: 2, name: "Report Card / Form 138", description: "From previous school year", required: true },
+  { id: 3, name: "Certificate of Good Moral Character", description: "From previous school", required: true },
+  { id: 4, name: "2x2 ID Pictures", description: "White background, 4 copies", required: true },
+];
 
 // Form validation schema
 const formSchema = z.object({
@@ -35,11 +45,20 @@ const formSchema = z.object({
 
 type FormValues = z.infer<typeof formSchema>;
 
+// Type for document upload
+type UploadedDocument = {
+  id: number;
+  file: File;
+  name: string;
+};
+
 const Enrollment = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const [showPayment, setShowPayment] = useState(false);
   const [formData, setFormData] = useState<FormValues | null>(null);
+  const [uploadedDocuments, setUploadedDocuments] = useState<UploadedDocument[]>([]);
+  const [draftSaved, setDraftSaved] = useState(false);
   
   // Initialize form
   const form = useForm<FormValues>({
@@ -64,15 +83,115 @@ const Enrollment = () => {
     },
   });
 
+  // Load draft data on component mount
+  useEffect(() => {
+    const savedDraft = localStorage.getItem('enrollmentDraft');
+    if (savedDraft) {
+      const parsed = JSON.parse(savedDraft);
+      form.reset(parsed);
+      
+      // Also load saved documents if any
+      const savedDocuments = localStorage.getItem('uploadedDocuments');
+      if (savedDocuments) {
+        try {
+          // We can't store actual File objects in localStorage, 
+          // so we'll just acknowledge that documents were uploaded
+          toast({
+            title: "Draft Loaded",
+            description: "Your previously saved documents were noted. Please re-upload them."
+          });
+        } catch (error) {
+          console.error("Error loading saved documents:", error);
+        }
+      }
+    }
+  }, [form]);
+
   const onSubmit = (values: FormValues) => {
+    // Check if all required documents are uploaded
+    const requiredDocIds = requiredDocuments.filter(doc => doc.required).map(doc => doc.id);
+    const uploadedDocIds = uploadedDocuments.map(doc => doc.id);
+    
+    const allRequiredDocsUploaded = requiredDocIds.every(id => 
+      uploadedDocIds.includes(id)
+    );
+    
+    if (!allRequiredDocsUploaded) {
+      toast({
+        title: "Missing Documents",
+        description: "Please upload all required documents before proceeding.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     // Save the form data for later submission after payment
     setFormData(values);
     // Show the payment form
     setShowPayment(true);
   };
 
+  const handleUpload = (docId: number, docName: string) => {
+    // Create a file input element
+    const fileInput = document.createElement('input');
+    fileInput.type = 'file';
+    fileInput.accept = 'image/*,.pdf';
+    
+    // Handle the file selection
+    fileInput.onchange = (e) => {
+      const target = e.target as HTMLInputElement;
+      if (target.files && target.files.length > 0) {
+        const file = target.files[0];
+        
+        // Add to uploaded documents
+        setUploadedDocuments(prev => {
+          // Remove previous upload for this document if exists
+          const filtered = prev.filter(doc => doc.id !== docId);
+          return [...filtered, { id: docId, file, name: docName }];
+        });
+        
+        toast({
+          title: "Document Uploaded",
+          description: `${docName} has been successfully uploaded.`,
+        });
+      }
+    };
+    
+    // Trigger file dialog
+    fileInput.click();
+  };
+
+  const removeDocument = (docId: number) => {
+    setUploadedDocuments(prev => prev.filter(doc => doc.id !== docId));
+    toast({
+      title: "Document Removed",
+      description: "The document has been removed.",
+    });
+  };
+
   const handlePaymentComplete = () => {
-    console.log("Enrollment form data:", formData);
+    if (!formData) return;
+    
+    // Create enrollment data object to store
+    const enrollmentData = {
+      ...formData,
+      id: `APP-${new Date().getFullYear()}-${Math.floor(Math.random() * 10000).toString().padStart(5, '0')}`,
+      submittedDate: new Date().toISOString().split('T')[0],
+      status: "Pending",
+      documents: uploadedDocuments.map(doc => ({
+        id: doc.id,
+        name: doc.name,
+        status: "Pending",
+        date: new Date().toISOString().split('T')[0]
+      }))
+    };
+    
+    // Save enrollment data to localStorage (simulating database)
+    saveEnrollmentData(enrollmentData);
+    
+    // Clear the draft from local storage
+    localStorage.removeItem('enrollmentDraft');
+    localStorage.removeItem('uploadedDocuments');
     
     toast({
       title: "Enrollment Completed",
@@ -83,8 +202,56 @@ const Enrollment = () => {
     navigate("/student/dashboard");
   };
 
+  const saveEnrollmentData = (data: any) => {
+    // Get existing enrollments or initialize empty array
+    const existingEnrollments = JSON.parse(localStorage.getItem('enrollments') || '[]');
+    
+    // Add new enrollment
+    const updatedEnrollments = [...existingEnrollments, data];
+    
+    // Save back to localStorage
+    localStorage.setItem('enrollments', JSON.stringify(updatedEnrollments));
+    
+    // Also save to student's personal enrollment data
+    localStorage.setItem('currentStudentEnrollment', JSON.stringify(data));
+  };
+
   const handlePaymentCancel = () => {
     setShowPayment(false);
+  };
+
+  const handleSaveDraft = () => {
+    const values = form.getValues();
+    localStorage.setItem('enrollmentDraft', JSON.stringify(values));
+    
+    // Save document upload state (we can't save the actual files)
+    localStorage.setItem('uploadedDocuments', JSON.stringify(
+      uploadedDocuments.map(doc => ({ id: doc.id, name: doc.name }))
+    ));
+    
+    setDraftSaved(true);
+    toast({
+      title: "Draft Saved",
+      description: "Your enrollment form has been saved as a draft.",
+    });
+    
+    // Reset the draft saved flag after 3 seconds
+    setTimeout(() => setDraftSaved(false), 3000);
+  };
+
+  const handleClearForm = () => {
+    // Reset the form
+    form.reset();
+    // Clear uploaded documents
+    setUploadedDocuments([]);
+    // Clear from localStorage
+    localStorage.removeItem('enrollmentDraft');
+    localStorage.removeItem('uploadedDocuments');
+    
+    toast({
+      title: "Form Cleared",
+      description: "The enrollment form has been reset.",
+    });
   };
 
   // If payment screen is showing, display only the payment component
@@ -412,55 +579,63 @@ const Enrollment = () => {
                 {/* Document Upload Section */}
                 <div>
                   <h3 className="text-lg font-medium mb-4">Required Documents</h3>
+                  
+                  {draftSaved && (
+                    <Alert className="mb-4 bg-green-50 border-green-500">
+                      <AlertDescription className="text-green-700">
+                        Your enrollment form draft has been saved successfully.
+                      </AlertDescription>
+                    </Alert>
+                  )}
+                  
                   <div className="space-y-4">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="border rounded-md p-4">
-                        <div className="flex justify-between items-center mb-2">
-                          <p className="font-medium">Birth Certificate</p>
-                          <Button variant="outline" size="sm">
-                            <Upload className="h-4 w-4 mr-2" /> Upload
-                          </Button>
+                      {requiredDocuments.map((doc) => (
+                        <div key={doc.id} className="border rounded-md p-4">
+                          <div className="flex justify-between items-center mb-2">
+                            <p className="font-medium">
+                              {doc.name} {doc.required && <span className="text-red-500">*</span>}
+                            </p>
+                            <div className="flex space-x-2">
+                              {uploadedDocuments.some(uploaded => uploaded.id === doc.id) ? (
+                                <Button 
+                                  variant="destructive" 
+                                  size="sm"
+                                  onClick={() => removeDocument(doc.id)}
+                                >
+                                  <Trash2 className="h-4 w-4 mr-2" /> Remove
+                                </Button>
+                              ) : (
+                                <Button 
+                                  variant="outline" 
+                                  size="sm"
+                                  onClick={() => handleUpload(doc.id, doc.name)}
+                                >
+                                  <Upload className="h-4 w-4 mr-2" /> Upload
+                                </Button>
+                              )}
+                            </div>
+                          </div>
+                          <p className="text-sm text-muted-foreground">{doc.description}</p>
+                          {uploadedDocuments.some(uploaded => uploaded.id === doc.id) && (
+                            <p className="text-sm text-green-600 mt-1">
+                              Document uploaded successfully
+                            </p>
+                          )}
                         </div>
-                        <p className="text-sm text-muted-foreground">Original or certified true copy</p>
-                      </div>
-                      
-                      <div className="border rounded-md p-4">
-                        <div className="flex justify-between items-center mb-2">
-                          <p className="font-medium">Report Card / Form 138</p>
-                          <Button variant="outline" size="sm">
-                            <Upload className="h-4 w-4 mr-2" /> Upload
-                          </Button>
-                        </div>
-                        <p className="text-sm text-muted-foreground">From previous school year</p>
-                      </div>
-                      
-                      <div className="border rounded-md p-4">
-                        <div className="flex justify-between items-center mb-2">
-                          <p className="font-medium">Certificate of Good Moral Character</p>
-                          <Button variant="outline" size="sm">
-                            <Upload className="h-4 w-4 mr-2" /> Upload
-                          </Button>
-                        </div>
-                        <p className="text-sm text-muted-foreground">From previous school</p>
-                      </div>
-                      
-                      <div className="border rounded-md p-4">
-                        <div className="flex justify-between items-center mb-2">
-                          <p className="font-medium">2x2 ID Pictures</p>
-                          <Button variant="outline" size="sm">
-                            <Upload className="h-4 w-4 mr-2" /> Upload
-                          </Button>
-                        </div>
-                        <p className="text-sm text-muted-foreground">White background, 4 copies</p>
-                      </div>
+                      ))}
                     </div>
                     
                     <div className="flex justify-between">
-                      <Button type="button" variant="outline">
+                      <Button type="button" variant="outline" onClick={() => {}}>
                         <FileText className="mr-2 h-4 w-4" /> Download Requirements Checklist
                       </Button>
                       
-                      <Button type="button" variant="secondary" onClick={() => form.reset()}>
+                      <Button 
+                        type="button" 
+                        variant="secondary" 
+                        onClick={handleClearForm}
+                      >
                         Clear Form
                       </Button>
                     </div>
@@ -473,10 +648,19 @@ const Enrollment = () => {
                   </Button>
                   
                   <div className="space-x-2">
-                    <Button type="button" variant="outline">
+                    <Button 
+                      type="button" 
+                      variant="outline"
+                      onClick={handleSaveDraft}
+                    >
                       <Save className="mr-2 h-4 w-4" /> Save Draft
                     </Button>
-                    <Button type="submit">
+                    <Button 
+                      type="submit"
+                      disabled={!uploadedDocuments.filter(doc => 
+                        requiredDocuments.find(reqDoc => reqDoc.id === doc.id)?.required
+                      ).length === requiredDocuments.filter(doc => doc.required).length}
+                    >
                       Continue to Payment <ArrowRight className="ml-2 h-4 w-4" />
                     </Button>
                   </div>

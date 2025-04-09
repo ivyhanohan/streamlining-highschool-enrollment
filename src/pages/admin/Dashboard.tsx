@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -22,10 +22,25 @@ import {
   Calendar
 } from 'lucide-react';
 
-// Mock data for students
-const studentApplications = [
+// Type for student applications
+type StudentApplication = {
+  id: string;
+  firstName: string;
+  lastName: string;
+  name?: string; // For backward compatibility
+  gradeLevel: string;
+  submittedDate: string;
+  status: string;
+  email: string;
+  documents?: any[];
+};
+
+// Initial mock data for students if no real data exists
+const initialStudentApplications = [
   { 
     id: "APP-2023-0001", 
+    firstName: "John",
+    lastName: "Smith",
     name: "John Smith", 
     gradeLevel: "Grade 9", 
     submittedDate: "2023-05-10", 
@@ -34,6 +49,8 @@ const studentApplications = [
   },
   { 
     id: "APP-2023-0002", 
+    firstName: "Maria",
+    lastName: "Garcia",
     name: "Maria Garcia", 
     gradeLevel: "Grade 10", 
     submittedDate: "2023-05-11", 
@@ -42,6 +59,8 @@ const studentApplications = [
   },
   { 
     id: "APP-2023-0003", 
+    firstName: "Robert",
+    lastName: "Johnson",
     name: "Robert Johnson", 
     gradeLevel: "Grade 11", 
     submittedDate: "2023-05-12", 
@@ -50,6 +69,8 @@ const studentApplications = [
   },
   { 
     id: "APP-2023-0004", 
+    firstName: "Emily",
+    lastName: "Wang",
     name: "Emily Wang", 
     gradeLevel: "Grade 9", 
     submittedDate: "2023-05-13", 
@@ -58,52 +79,134 @@ const studentApplications = [
   },
   { 
     id: "APP-2023-0005", 
+    firstName: "Michael",
+    lastName: "Brown",
     name: "Michael Brown", 
     gradeLevel: "Grade 12", 
     submittedDate: "2023-05-14", 
     status: "Approved", 
     email: "michael.brown@example.com" 
   },
-  { 
-    id: "APP-2023-0006", 
-    name: "Sarah Wilson", 
-    gradeLevel: "Grade 10", 
-    submittedDate: "2023-05-15", 
-    status: "Pending", 
-    email: "sarah.wilson@example.com" 
-  },
-  { 
-    id: "APP-2023-0007", 
-    name: "James Lee", 
-    gradeLevel: "Grade 9", 
-    submittedDate: "2023-05-16", 
-    status: "Pending", 
-    email: "james.lee@example.com" 
-  },
 ];
 
-// Summary data for dashboard
-const summaryData = {
-  totalApplications: 156,
-  pending: 48,
-  approved: 98,
-  rejected: 10,
-  today: 12,
-  thisWeek: 37,
+// Type definition for summary data
+type SummaryData = {
+  totalApplications: number;
+  pending: number;
+  approved: number;
+  rejected: number;
+  today: number;
+  thisWeek: number;
   gradeDistribution: {
-    grade9: 67,
-    grade10: 42,
-    grade11: 31,
-    grade12: 16
-  }
+    grade7: number;
+    grade8: number;
+    grade9: number;
+    grade10: number;
+    grade11: number;
+    grade12: number;
+  };
 };
 
 const AdminDashboard = () => {
   const [searchTerm, setSearchTerm] = useState("");
-  const [filteredStudents, setFilteredStudents] = useState(studentApplications);
+  const [studentApplications, setStudentApplications] = useState<StudentApplication[]>([]);
+  const [filteredStudents, setFilteredStudents] = useState<StudentApplication[]>([]);
   const [selectedStatus, setSelectedStatus] = useState("all");
+  const [summaryData, setSummaryData] = useState<SummaryData>({
+    totalApplications: 0,
+    pending: 0,
+    approved: 0,
+    rejected: 0,
+    today: 0,
+    thisWeek: 0,
+    gradeDistribution: {
+      grade7: 0,
+      grade8: 0,
+      grade9: 0,
+      grade10: 0,
+      grade11: 0,
+      grade12: 0
+    }
+  });
+  
   const { toast } = useToast();
   const navigate = useNavigate();
+  
+  // Load applications data on component mount and calculate summary stats
+  useEffect(() => {
+    // Try to get enrollment data from localStorage
+    const enrollmentsData = localStorage.getItem('enrollments');
+    
+    let applications: StudentApplication[] = [];
+    
+    if (enrollmentsData) {
+      try {
+        // Parse the enrollment data
+        const parsedEnrollments = JSON.parse(enrollmentsData);
+        
+        // Map the enrollments to the expected format
+        applications = parsedEnrollments.map((enrollment: any) => ({
+          id: enrollment.id || `APP-${Date.now()}`,
+          firstName: enrollment.firstName || "",
+          lastName: enrollment.lastName || "",
+          name: `${enrollment.firstName} ${enrollment.lastName}`,
+          gradeLevel: `Grade ${enrollment.gradeLevel}`,
+          submittedDate: enrollment.submittedDate || new Date().toISOString().split('T')[0],
+          status: enrollment.status || "Pending",
+          email: enrollment.email || "",
+          documents: enrollment.documents || []
+        }));
+      } catch (error) {
+        console.error("Error parsing enrollments:", error);
+        applications = [...initialStudentApplications];
+      }
+    } else {
+      // Use mock data if no real data exists
+      applications = [...initialStudentApplications];
+    }
+    
+    setStudentApplications(applications);
+    setFilteredStudents(applications);
+    
+    // Calculate summary data
+    const summary = calculateSummaryData(applications);
+    setSummaryData(summary);
+  }, []);
+  
+  // Calculate summary stats from applications
+  const calculateSummaryData = (applications: StudentApplication[]): SummaryData => {
+    const today = new Date().toISOString().split('T')[0];
+    const lastWeek = new Date();
+    lastWeek.setDate(lastWeek.getDate() - 7);
+    
+    const pending = applications.filter(app => app.status.toLowerCase() === 'pending').length;
+    const approved = applications.filter(app => app.status.toLowerCase() === 'approved').length;
+    const rejected = applications.filter(app => app.status.toLowerCase() === 'rejected').length;
+    const todayCount = applications.filter(app => app.submittedDate === today).length;
+    const weekCount = applications.filter(app => {
+      const appDate = new Date(app.submittedDate);
+      return appDate >= lastWeek;
+    }).length;
+    
+    const gradeDistribution = {
+      grade7: applications.filter(app => app.gradeLevel.includes('7')).length,
+      grade8: applications.filter(app => app.gradeLevel.includes('8')).length,
+      grade9: applications.filter(app => app.gradeLevel.includes('9')).length,
+      grade10: applications.filter(app => app.gradeLevel.includes('10')).length,
+      grade11: applications.filter(app => app.gradeLevel.includes('11')).length,
+      grade12: applications.filter(app => app.gradeLevel.includes('12')).length
+    };
+    
+    return {
+      totalApplications: applications.length,
+      pending,
+      approved,
+      rejected,
+      today: todayCount,
+      thisWeek: weekCount,
+      gradeDistribution
+    };
+  };
   
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     const term = e.target.value;
@@ -113,7 +216,7 @@ const AdminDashboard = () => {
       filterByStatus(selectedStatus);
     } else {
       const filtered = studentApplications.filter(student => 
-        student.name.toLowerCase().includes(term.toLowerCase()) ||
+        student.name?.toLowerCase().includes(term.toLowerCase()) ||
         student.id.toLowerCase().includes(term.toLowerCase()) ||
         student.email.toLowerCase().includes(term.toLowerCase())
       );
@@ -134,7 +237,7 @@ const AdminDashboard = () => {
         searchTerm === "" 
           ? studentApplications 
           : studentApplications.filter(student => 
-              student.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+              student.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
               student.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
               student.email.toLowerCase().includes(searchTerm.toLowerCase())
             )
@@ -148,7 +251,7 @@ const AdminDashboard = () => {
         searchTerm === "" 
           ? filtered 
           : filtered.filter(student => 
-              student.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+              student.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
               student.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
               student.email.toLowerCase().includes(searchTerm.toLowerCase())
             )
@@ -157,26 +260,64 @@ const AdminDashboard = () => {
   };
   
   const handleStatusChange = (id: string, newStatus: string) => {
+    // Update the status in our application array
     const updatedStudents = studentApplications.map(student => 
       student.id === id ? { ...student, status: newStatus } : student
     );
     
-    // In a real app, this would be an API call to update the database
-    // For now, we'll just update our local state for demonstration
+    setStudentApplications(updatedStudents);
+    
+    // Also update the status in localStorage
+    updateEnrollmentStatus(id, newStatus);
     
     toast({
       title: "Status Updated",
       description: `Application ${id} has been ${newStatus.toLowerCase()}.`,
     });
     
-    // Update displayed students
+    // Update displayed students and summary data
     filterByStatus(selectedStatus);
+    setSummaryData(calculateSummaryData(updatedStudents));
+  };
+  
+  const updateEnrollmentStatus = (id: string, newStatus: string) => {
+    const enrollmentsData = localStorage.getItem('enrollments');
+    
+    if (enrollmentsData) {
+      try {
+        const enrollments = JSON.parse(enrollmentsData);
+        const updatedEnrollments = enrollments.map((enrollment: any) => {
+          if (enrollment.id === id) {
+            return { ...enrollment, status: newStatus };
+          }
+          return enrollment;
+        });
+        
+        localStorage.setItem('enrollments', JSON.stringify(updatedEnrollments));
+        
+        // Also update in currentStudentEnrollment if it's the same ID
+        const currentEnrollment = localStorage.getItem('currentStudentEnrollment');
+        if (currentEnrollment) {
+          const parsedCurrent = JSON.parse(currentEnrollment);
+          if (parsedCurrent.id === id) {
+            parsedCurrent.status = newStatus;
+            localStorage.setItem('currentStudentEnrollment', JSON.stringify(parsedCurrent));
+          }
+        }
+      } catch (error) {
+        console.error("Error updating enrollment status:", error);
+      }
+    }
   };
   
   const handleDelete = (id: string) => {
-    // In a real app, this would be an API call to delete from the database
-    // For now, we'll just update our local state for demonstration
+    // Remove the enrollment from our application array
     const updatedStudents = studentApplications.filter(student => student.id !== id);
+    
+    setStudentApplications(updatedStudents);
+    
+    // Also remove from localStorage
+    deleteEnrollment(id);
     
     toast({
       title: "Application Deleted",
@@ -184,8 +325,33 @@ const AdminDashboard = () => {
       variant: "destructive",
     });
     
-    // Update displayed students
+    // Update displayed students and summary data
     filterByStatus(selectedStatus);
+    setSummaryData(calculateSummaryData(updatedStudents));
+  };
+  
+  const deleteEnrollment = (id: string) => {
+    const enrollmentsData = localStorage.getItem('enrollments');
+    
+    if (enrollmentsData) {
+      try {
+        const enrollments = JSON.parse(enrollmentsData);
+        const updatedEnrollments = enrollments.filter((enrollment: any) => enrollment.id !== id);
+        
+        localStorage.setItem('enrollments', JSON.stringify(updatedEnrollments));
+        
+        // Also remove from currentStudentEnrollment if it's the same ID
+        const currentEnrollment = localStorage.getItem('currentStudentEnrollment');
+        if (currentEnrollment) {
+          const parsedCurrent = JSON.parse(currentEnrollment);
+          if (parsedCurrent.id === id) {
+            localStorage.removeItem('currentStudentEnrollment');
+          }
+        }
+      } catch (error) {
+        console.error("Error deleting enrollment:", error);
+      }
+    }
   };
   
   const handleLogout = () => {
@@ -305,13 +471,39 @@ const AdminDashboard = () => {
                     <div className="space-y-2">
                       <div>
                         <div className="flex justify-between text-sm">
+                          <span>Grade 7</span>
+                          <span>{summaryData.gradeDistribution.grade7}</span>
+                        </div>
+                        <div className="h-2 bg-gray-100 rounded-full mt-1">
+                          <div
+                            className="h-2 bg-blue-400 rounded-full"
+                            style={{ width: `${(summaryData.gradeDistribution.grade7 / Math.max(1, summaryData.totalApplications)) * 100}%` }}
+                          ></div>
+                        </div>
+                      </div>
+                      
+                      <div>
+                        <div className="flex justify-between text-sm">
+                          <span>Grade 8</span>
+                          <span>{summaryData.gradeDistribution.grade8}</span>
+                        </div>
+                        <div className="h-2 bg-gray-100 rounded-full mt-1">
+                          <div
+                            className="h-2 bg-indigo-400 rounded-full"
+                            style={{ width: `${(summaryData.gradeDistribution.grade8 / Math.max(1, summaryData.totalApplications)) * 100}%` }}
+                          ></div>
+                        </div>
+                      </div>
+                      
+                      <div>
+                        <div className="flex justify-between text-sm">
                           <span>Grade 9</span>
                           <span>{summaryData.gradeDistribution.grade9}</span>
                         </div>
                         <div className="h-2 bg-gray-100 rounded-full mt-1">
                           <div
                             className="h-2 bg-blue-500 rounded-full"
-                            style={{ width: `${(summaryData.gradeDistribution.grade9 / summaryData.totalApplications) * 100}%` }}
+                            style={{ width: `${(summaryData.gradeDistribution.grade9 / Math.max(1, summaryData.totalApplications)) * 100}%` }}
                           ></div>
                         </div>
                       </div>
@@ -324,7 +516,7 @@ const AdminDashboard = () => {
                         <div className="h-2 bg-gray-100 rounded-full mt-1">
                           <div
                             className="h-2 bg-green-500 rounded-full"
-                            style={{ width: `${(summaryData.gradeDistribution.grade10 / summaryData.totalApplications) * 100}%` }}
+                            style={{ width: `${(summaryData.gradeDistribution.grade10 / Math.max(1, summaryData.totalApplications)) * 100}%` }}
                           ></div>
                         </div>
                       </div>
@@ -337,7 +529,7 @@ const AdminDashboard = () => {
                         <div className="h-2 bg-gray-100 rounded-full mt-1">
                           <div
                             className="h-2 bg-amber-500 rounded-full"
-                            style={{ width: `${(summaryData.gradeDistribution.grade11 / summaryData.totalApplications) * 100}%` }}
+                            style={{ width: `${(summaryData.gradeDistribution.grade11 / Math.max(1, summaryData.totalApplications)) * 100}%` }}
                           ></div>
                         </div>
                       </div>
@@ -350,7 +542,7 @@ const AdminDashboard = () => {
                         <div className="h-2 bg-gray-100 rounded-full mt-1">
                           <div
                             className="h-2 bg-purple-500 rounded-full"
-                            style={{ width: `${(summaryData.gradeDistribution.grade12 / summaryData.totalApplications) * 100}%` }}
+                            style={{ width: `${(summaryData.gradeDistribution.grade12 / Math.max(1, summaryData.totalApplications)) * 100}%` }}
                           ></div>
                         </div>
                       </div>
@@ -488,7 +680,7 @@ const AdminDashboard = () => {
                         filteredStudents.map((student) => (
                           <TableRow key={student.id}>
                             <TableCell className="font-medium">{student.id}</TableCell>
-                            <TableCell>{student.name}</TableCell>
+                            <TableCell>{student.name || `${student.firstName} ${student.lastName}`}</TableCell>
                             <TableCell>{student.gradeLevel}</TableCell>
                             <TableCell>{student.submittedDate}</TableCell>
                             <TableCell>

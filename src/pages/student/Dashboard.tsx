@@ -1,32 +1,37 @@
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Clock, Calendar, FileText, Download, CheckCircle, AlertCircle, ArrowRight, Home } from 'lucide-react';
 
-// Mock data for application status
-const applicationStatus = {
-  id: "APP-2023-12345",
-  status: "Pending Review",
-  submittedDate: "2023-05-15",
-  lastUpdated: "2023-05-16",
-  academicYear: "2023-2024",
-  gradeLevel: "Grade 9 (Freshman)",
-  documents: [
-    { name: "Birth Certificate", status: "Verified", date: "2023-05-16" },
-    { name: "Report Card / Form 138", status: "Pending", date: "2023-05-15" },
-    { name: "Certificate of Good Moral Character", status: "Pending", date: "2023-05-15" },
-    { name: "2x2 ID Pictures", status: "Pending", date: "2023-05-15" },
-    { name: "Medical Certificate", status: "Not Submitted", date: "-" },
-  ],
-  nextSteps: [
-    "Wait for document verification.",
-    "Complete entrance assessment (schedule will be sent via email).",
-    "Attend orientation session."
-  ]
+// Type for application status
+type EnrollmentData = {
+  id: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  status: string;
+  submittedDate: string;
+  lastUpdated?: string;
+  academicYear?: string;
+  gradeLevel: string;
+  documents: {
+    id: number;
+    name: string;
+    status: string;
+    date: string;
+  }[];
+  nextSteps?: string[];
 };
+
+// Default next steps
+const defaultNextSteps = [
+  "Wait for document verification.",
+  "Complete entrance assessment (schedule will be sent via email).",
+  "Attend orientation session."
+];
 
 // Mock data for upcoming events
 const upcomingEvents = [
@@ -38,6 +43,50 @@ const upcomingEvents = [
 
 const Dashboard = () => {
   const navigate = useNavigate();
+  const [applicationStatus, setApplicationStatus] = useState<EnrollmentData | null>(null);
+  
+  useEffect(() => {
+    // Try to get enrollment data from localStorage
+    const enrollmentData = localStorage.getItem('currentStudentEnrollment');
+    
+    if (enrollmentData) {
+      const parsedData = JSON.parse(enrollmentData);
+      
+      // Ensure we have all required fields
+      const enrichedData = {
+        ...parsedData,
+        lastUpdated: parsedData.lastUpdated || new Date().toISOString().split('T')[0],
+        academicYear: parsedData.academicYear || `${new Date().getFullYear()}-${new Date().getFullYear() + 1}`,
+        nextSteps: parsedData.nextSteps || defaultNextSteps
+      };
+      
+      setApplicationStatus(enrichedData);
+    } else {
+      // If no enrollment data found, use mock data
+      setApplicationStatus({
+        id: "APP-2023-12345",
+        firstName: "John",
+        lastName: "Doe",
+        email: "john.doe@example.com",
+        status: "Pending Review",
+        submittedDate: "2023-05-15",
+        lastUpdated: "2023-05-16",
+        academicYear: "2023-2024",
+        gradeLevel: "Grade 9",
+        documents: [
+          { id: 1, name: "Birth Certificate", status: "Verified", date: "2023-05-16" },
+          { id: 2, name: "Report Card / Form 138", status: "Pending", date: "2023-05-15" },
+          { id: 3, name: "Certificate of Good Moral Character", status: "Pending", date: "2023-05-15" },
+          { id: 4, name: "2x2 ID Pictures", status: "Pending", date: "2023-05-15" },
+        ],
+        nextSteps: defaultNextSteps
+      });
+    }
+  }, []);
+  
+  if (!applicationStatus) {
+    return <div>Loading...</div>;
+  }
   
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-12 px-4">
@@ -91,7 +140,7 @@ const Dashboard = () => {
                     </div>
                     <div>
                       <p className="text-sm text-muted-foreground">Grade Level</p>
-                      <p className="font-medium">{applicationStatus.gradeLevel}</p>
+                      <p className="font-medium">Grade {applicationStatus.gradeLevel}</p>
                     </div>
                   </div>
                   
@@ -131,7 +180,7 @@ const Dashboard = () => {
                   <div>
                     <h3 className="font-medium mb-2">Next Steps</h3>
                     <ul className="list-disc pl-5 space-y-1">
-                      {applicationStatus.nextSteps.map((step, index) => (
+                      {applicationStatus.nextSteps?.map((step, index) => (
                         <li key={index} className="text-muted-foreground">{step}</li>
                       ))}
                     </ul>

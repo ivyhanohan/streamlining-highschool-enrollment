@@ -5,15 +5,13 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Download, FileText, ArrowRight } from 'lucide-react';
+import { FileText, ArrowRight } from 'lucide-react';
 
 const requirements = [
   { id: 1, name: "Birth Certificate", description: "Original or certified true copy", required: true },
   { id: 2, name: "Report Card / Form 138", description: "From previous school year", required: true },
   { id: 3, name: "Certificate of Good Moral Character", description: "From previous school", required: true },
   { id: 4, name: "2x2 ID Pictures", description: "White background, 4 copies", required: true },
-  { id: 5, name: "Medical Certificate", description: "From a licensed physician", required: true },
-  { id: 6, name: "Proof of Residency", description: "Utility bill or valid ID", required: false },
 ];
 
 const Welcome = () => {
@@ -59,7 +57,6 @@ const Welcome = () => {
                   <TableHead className="w-[50px]">Ready</TableHead>
                   <TableHead>Document</TableHead>
                   <TableHead>Description</TableHead>
-                  <TableHead className="w-[100px]">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -81,16 +78,6 @@ const Welcome = () => {
                       </label>
                     </TableCell>
                     <TableCell>{req.description}</TableCell>
-                    <TableCell>
-                      <div className="flex space-x-2">
-                        <Button variant="outline" size="sm" className="h-8 w-8 p-0">
-                          <FileText className="h-4 w-4" />
-                        </Button>
-                        <Button variant="outline" size="sm" className="h-8 w-8 p-0">
-                          <Download className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
