@@ -332,10 +332,10 @@ const Enrollment = () => {
                             <SelectContent>
                               <SelectItem value="7">Grade 7</SelectItem>
                               <SelectItem value="8">Grade 8</SelectItem>
-                              <SelectItem value="9">Grade 9 (Freshman)</SelectItem>
-                              <SelectItem value="10">Grade 10 (Sophomore)</SelectItem>
-                              <SelectItem value="11">Grade 11 (Junior)</SelectItem>
-                              <SelectItem value="12">Grade 12 (Senior)</SelectItem>
+                              <SelectItem value="9">Grade 9 </SelectItem>
+                              <SelectItem value="10">Grade 10 </SelectItem>
+                              <SelectItem value="11">Grade 11 </SelectItem>
+                              <SelectItem value="12">Grade 12 </SelectItem>
                             </SelectContent>
                           </Select>
                           <FormMessage />
