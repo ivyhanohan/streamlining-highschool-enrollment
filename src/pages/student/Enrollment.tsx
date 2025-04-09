@@ -330,6 +330,8 @@ const Enrollment = () => {
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
+                              <SelectItem value="7">Grade 7</SelectItem>
+                              <SelectItem value="8">Grade 8</SelectItem>
                               <SelectItem value="9">Grade 9 (Freshman)</SelectItem>
                               <SelectItem value="10">Grade 10 (Sophomore)</SelectItem>
                               <SelectItem value="11">Grade 11 (Junior)</SelectItem>
