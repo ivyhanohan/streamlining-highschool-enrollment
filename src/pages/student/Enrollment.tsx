@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+
+import React, { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,8 +11,9 @@ import { useToast } from "@/hooks/use-toast";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Upload, FileText, ArrowRight, Save } from 'lucide-react';
+import { Upload, FileText, ArrowRight, Save, Check, X } from 'lucide-react';
 import PaymentForm from "@/components/PaymentForm";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 // Form validation schema
 const formSchema = z.object({
@@ -33,6 +35,16 @@ const formSchema = z.object({
   emergencyContactRelationship: z.string().min(2, { message: "Relationship is required" }),
 });
 
+// Required documents
+const requiredDocuments = [
+  { id: "birthCertificate", name: "Birth Certificate", description: "Original or certified true copy", required: true },
+  { id: "reportCard", name: "Report Card / Form 138", description: "From previous school year", required: true },
+  { id: "goodMoralCertificate", name: "Certificate of Good Moral Character", description: "From previous school", required: true },
+  { id: "idPictures", name: "2x2 ID Pictures", description: "White background, 4 copies", required: true },
+  { id: "medicalCertificate", name: "Medical Certificate", description: "From a licensed physician", required: true },
+  { id: "proofOfResidency", name: "Proof of Residency", description: "Utility bill or valid ID", required: false },
+];
+
 type FormValues = z.infer<typeof formSchema>;
 
 const Enrollment = () => {
@@ -40,6 +52,8 @@ const Enrollment = () => {
   const navigate = useNavigate();
   const [showPayment, setShowPayment] = useState(false);
   const [formData, setFormData] = useState<FormValues | null>(null);
+  const [uploadedFiles, setUploadedFiles] = useState<Record<string, File | null>>({});
+  const fileInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
   
   // Initialize form
   const form = useForm<FormValues>({
@@ -64,7 +78,61 @@ const Enrollment = () => {
     },
   });
 
+  const handleFileUpload = (documentId: string, e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      setUploadedFiles(prev => ({
+        ...prev,
+        [documentId]: file
+      }));
+      
+      toast({
+        title: "File Uploaded",
+        description: `${file.name} has been uploaded successfully.`,
+      });
+    }
+  };
+
+  const triggerFileInput = (documentId: string) => {
+    if (fileInputRefs.current[documentId]) {
+      fileInputRefs.current[documentId]?.click();
+    }
+  };
+
+  const removeFile = (documentId: string) => {
+    setUploadedFiles(prev => ({
+      ...prev,
+      [documentId]: null
+    }));
+    
+    // Reset the file input
+    if (fileInputRefs.current[documentId]) {
+      const input = fileInputRefs.current[documentId];
+      if (input) {
+        input.value = '';
+      }
+    }
+    
+    toast({
+      title: "File Removed",
+      description: "The file has been removed.",
+    });
+  };
+
+  const allRequiredDocumentsUploaded = requiredDocuments
+    .filter(doc => doc.required)
+    .every(doc => uploadedFiles[doc.id]);
+
   const onSubmit = (values: FormValues) => {
+    if (!allRequiredDocumentsUploaded) {
+      toast({
+        title: "Missing Documents",
+        description: "Please upload all required documents before proceeding.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
     // Save the form data for later submission after payment
     setFormData(values);
     // Show the payment form
@@ -73,6 +141,7 @@ const Enrollment = () => {
 
   const handlePaymentComplete = () => {
     console.log("Enrollment form data:", formData);
+    console.log("Uploaded documents:", uploadedFiles);
     
     toast({
       title: "Enrollment Completed",
@@ -414,46 +483,62 @@ const Enrollment = () => {
                   <h3 className="text-lg font-medium mb-4">Required Documents</h3>
                   <div className="space-y-4">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="border rounded-md p-4">
-                        <div className="flex justify-between items-center mb-2">
-                          <p className="font-medium">Birth Certificate</p>
-                          <Button variant="outline" size="sm">
-                            <Upload className="h-4 w-4 mr-2" /> Upload
-                          </Button>
+                      {requiredDocuments.map((doc) => (
+                        <div key={doc.id} className="border rounded-md p-4">
+                          <div className="flex justify-between items-center mb-2">
+                            <p className="font-medium">
+                              {doc.name} {doc.required && <span className="text-red-500">*</span>}
+                            </p>
+                            
+                            {uploadedFiles[doc.id] ? (
+                              <div className="flex items-center space-x-2">
+                                <span className="text-sm text-green-600 flex items-center">
+                                  <Check className="h-4 w-4 mr-1" /> Uploaded
+                                </span>
+                                <Button 
+                                  variant="ghost" 
+                                  size="sm" 
+                                  onClick={() => removeFile(doc.id)}
+                                  className="h-8 w-8 p-0 text-red-500"
+                                >
+                                  <X className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            ) : (
+                              <Button 
+                                variant="outline" 
+                                size="sm"
+                                onClick={() => triggerFileInput(doc.id)}
+                              >
+                                <Upload className="h-4 w-4 mr-2" /> Upload
+                              </Button>
+                            )}
+                            
+                            <input
+                              type="file"
+                              className="hidden"
+                              onChange={(e) => handleFileUpload(doc.id, e)}
+                              ref={(el) => fileInputRefs.current[doc.id] = el}
+                              accept=".pdf,.jpg,.jpeg,.png"
+                            />
+                          </div>
+                          <p className="text-sm text-muted-foreground">{doc.description}</p>
+                          {uploadedFiles[doc.id] && (
+                            <p className="text-xs text-muted-foreground mt-1">
+                              File: {uploadedFiles[doc.id]?.name} ({Math.round(uploadedFiles[doc.id]?.size as number / 1024)} KB)
+                            </p>
+                          )}
                         </div>
-                        <p className="text-sm text-muted-foreground">Original or certified true copy</p>
-                      </div>
-                      
-                      <div className="border rounded-md p-4">
-                        <div className="flex justify-between items-center mb-2">
-                          <p className="font-medium">Report Card / Form 138</p>
-                          <Button variant="outline" size="sm">
-                            <Upload className="h-4 w-4 mr-2" /> Upload
-                          </Button>
-                        </div>
-                        <p className="text-sm text-muted-foreground">From previous school year</p>
-                      </div>
-                      
-                      <div className="border rounded-md p-4">
-                        <div className="flex justify-between items-center mb-2">
-                          <p className="font-medium">Certificate of Good Moral Character</p>
-                          <Button variant="outline" size="sm">
-                            <Upload className="h-4 w-4 mr-2" /> Upload
-                          </Button>
-                        </div>
-                        <p className="text-sm text-muted-foreground">From previous school</p>
-                      </div>
-                      
-                      <div className="border rounded-md p-4">
-                        <div className="flex justify-between items-center mb-2">
-                          <p className="font-medium">2x2 ID Pictures</p>
-                          <Button variant="outline" size="sm">
-                            <Upload className="h-4 w-4 mr-2" /> Upload
-                          </Button>
-                        </div>
-                        <p className="text-sm text-muted-foreground">White background, 4 copies</p>
-                      </div>
+                      ))}
                     </div>
+                    
+                    {!allRequiredDocumentsUploaded && (
+                      <Alert variant="warning" className="bg-amber-50 text-amber-700 border-amber-200">
+                        <AlertDescription>
+                          Please upload all required documents marked with (*) to proceed to payment.
+                        </AlertDescription>
+                      </Alert>
+                    )}
                     
                     <div className="flex justify-between">
                       <Button type="button" variant="outline">
@@ -476,7 +561,10 @@ const Enrollment = () => {
                     <Button type="button" variant="outline">
                       <Save className="mr-2 h-4 w-4" /> Save Draft
                     </Button>
-                    <Button type="submit">
+                    <Button 
+                      type="submit"
+                      disabled={!allRequiredDocumentsUploaded}
+                    >
                       Continue to Payment <ArrowRight className="ml-2 h-4 w-4" />
                     </Button>
                   </div>
