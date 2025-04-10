@@ -37,6 +37,7 @@ const formSchema = z.object({
   email: z.string().email({ message: "Please enter a valid email address" }),
   phone: z.string().min(10, { message: "Valid phone number is required" }),
   gradeLevel: z.string().min(1, { message: "Please select a grade level" }),
+  strand: z.string().optional(),
   previousSchool: z.string().optional(),
   emergencyContactName: z.string().min(2, { message: "Emergency contact name is required" }),
   emergencyContactPhone: z.string().min(10, { message: "Valid emergency contact phone is required" }),
@@ -59,6 +60,7 @@ const Enrollment = () => {
   const [formData, setFormData] = useState<FormValues | null>(null);
   const [uploadedDocuments, setUploadedDocuments] = useState<UploadedDocument[]>([]);
   const [draftSaved, setDraftSaved] = useState(false);
+  const [showStrandSelection, setShowStrandSelection] = useState(false);
   
   // Initialize form
   const form = useForm<FormValues>({
@@ -76,6 +78,7 @@ const Enrollment = () => {
       email: "",
       phone: "",
       gradeLevel: "",
+      strand: "",
       previousSchool: "",
       emergencyContactName: "",
       emergencyContactPhone: "",
@@ -89,6 +92,11 @@ const Enrollment = () => {
     if (savedDraft) {
       const parsed = JSON.parse(savedDraft);
       form.reset(parsed);
+      
+      // Check if we need to show strand selection
+      if (parsed.gradeLevel && parseInt(parsed.gradeLevel) >= 11) {
+        setShowStrandSelection(true);
+      }
       
       // Also load saved documents if any
       const savedDocuments = localStorage.getItem('uploadedDocuments');
@@ -105,7 +113,22 @@ const Enrollment = () => {
         }
       }
     }
-  }, [form]);
+  }, [form, toast]);
+
+  // Handle grade level change to show/hide strand selection
+  const handleGradeLevelChange = (value: string) => {
+    form.setValue("gradeLevel", value);
+    
+    // Show strand selection only for senior high school (grades 11-12)
+    if (parseInt(value) >= 11) {
+      setShowStrandSelection(true);
+      // Clear any existing strand selection if changing between grades
+      form.setValue("strand", "");
+    } else {
+      setShowStrandSelection(false);
+      form.setValue("strand", "");
+    }
+  };
 
   const onSubmit = (values: FormValues) => {
     // Check if all required documents are uploaded
@@ -247,6 +270,8 @@ const Enrollment = () => {
     // Clear from localStorage
     localStorage.removeItem('enrollmentDraft');
     localStorage.removeItem('uploadedDocuments');
+    // Reset strand selection
+    setShowStrandSelection(false);
     
     toast({
       title: "Form Cleared",
@@ -488,7 +513,7 @@ const Enrollment = () => {
                         <FormItem>
                           <FormLabel>Grade Level Applying For</FormLabel>
                           <Select 
-                            onValueChange={field.onChange} 
+                            onValueChange={(value) => handleGradeLevelChange(value)} 
                             defaultValue={field.value}
                           >
                             <FormControl>
@@ -499,16 +524,46 @@ const Enrollment = () => {
                             <SelectContent>
                               <SelectItem value="7">Grade 7</SelectItem>
                               <SelectItem value="8">Grade 8</SelectItem>
-                              <SelectItem value="9">Grade 9 </SelectItem>
-                              <SelectItem value="10">Grade 10 </SelectItem>
-                              <SelectItem value="11">Grade 11 </SelectItem>
-                              <SelectItem value="12">Grade 12 </SelectItem>
+                              <SelectItem value="9">Grade 9</SelectItem>
+                              <SelectItem value="10">Grade 10</SelectItem>
+                              <SelectItem value="11">Grade 11</SelectItem>
+                              <SelectItem value="12">Grade 12</SelectItem>
                             </SelectContent>
                           </Select>
                           <FormMessage />
                         </FormItem>
                       )}
                     />
+                    
+                    {showStrandSelection && (
+                      <FormField
+                        control={form.control}
+                        name="strand"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Academic Strand</FormLabel>
+                            <Select 
+                              onValueChange={field.onChange} 
+                              defaultValue={field.value}
+                            >
+                              <FormControl>
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Select academic strand" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                <SelectItem value="GAS">General Academic Strand (GAS)</SelectItem>
+                                <SelectItem value="HUMSS">Humanities and Social Sciences (HUMSS)</SelectItem>
+                                <SelectItem value="STEM">Science, Technology, Engineering, and Mathematics (STEM)</SelectItem>
+                                <SelectItem value="TVL">Technical-Vocational-Livelihood (TVL)</SelectItem>
+                                <SelectItem value="ICT">Information and Communications Technology (ICT)</SelectItem>
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    )}
                     
                     <FormField
                       control={form.control}
@@ -657,9 +712,9 @@ const Enrollment = () => {
                     </Button>
                     <Button 
                       type="submit"
-                      disabled={!uploadedDocuments.filter(doc => 
+                      disabled={uploadedDocuments.filter(doc => 
                         requiredDocuments.find(reqDoc => reqDoc.id === doc.id)?.required
-                      ).length === requiredDocuments.filter(doc => doc.required).length}
+                      ).length !== requiredDocuments.filter(doc => doc.required).length}
                     >
                       Continue to Payment <ArrowRight className="ml-2 h-4 w-4" />
                     </Button>
