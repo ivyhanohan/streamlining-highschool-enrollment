@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { CreditCard, Smartphone, ArrowRight, Check } from 'lucide-react';
+import { CreditCard, Smartphone, ArrowRight } from 'lucide-react';
 
 interface PaymentFormProps {
   onPaymentComplete: () => void;
@@ -18,9 +18,7 @@ const PaymentForm: React.FC<PaymentFormProps> = ({ onPaymentComplete, onCancel }
   const [isProcessing, setIsProcessing] = useState(false);
   const [cardInfo, setCardInfo] = useState({
     cardNumber: '',
-    cardName: '',
-    expiryDate: '',
-    cvv: ''
+    cardName: ''
   });
   const [gcashNumber, setGcashNumber] = useState('');
   const { toast } = useToast();
@@ -99,31 +97,6 @@ const PaymentForm: React.FC<PaymentFormProps> = ({ onPaymentComplete, onCancel }
                     onChange={(e) => setCardInfo({...cardInfo, cardName: e.target.value})}
                     required
                   />
-                </div>
-                
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="expiryDate">Expiry Date</Label>
-                    <Input 
-                      id="expiryDate"
-                      placeholder="MM/YY"
-                      value={cardInfo.expiryDate}
-                      onChange={(e) => setCardInfo({...cardInfo, expiryDate: e.target.value})}
-                      required
-                    />
-                  </div>
-                  
-                  <div>
-                    <Label htmlFor="cvv">CVV</Label>
-                    <Input 
-                      id="cvv"
-                      type="password"
-                      placeholder="123"
-                      value={cardInfo.cvv}
-                      onChange={(e) => setCardInfo({...cardInfo, cvv: e.target.value})}
-                      required
-                    />
-                  </div>
                 </div>
               </div>
             ) : (
