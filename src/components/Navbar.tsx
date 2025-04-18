@@ -37,8 +37,8 @@ const Navbar = () => {
       isScrolled ? "bg-white/80 backdrop-blur-md shadow-sm" : "bg-transparent"
     )}>
       <div className="flex items-center justify-between">
-        <Link to="/" className="flex items-center space-x-2">
-          <span className="font-display font-bold text-xl">EduEnroll</span>
+        <Link to="/" className="font-display font-bold text-xl">
+          EduEnroll
         </Link>
         
         <nav className="hidden md:flex items-center space-x-1">
