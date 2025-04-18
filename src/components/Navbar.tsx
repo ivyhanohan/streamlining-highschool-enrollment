@@ -1,6 +1,5 @@
-
 import React, { useState, useEffect } from 'react';
-import { Menu, X, ChevronDown } from 'lucide-react';
+import { Menu, X } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { cn } from "@/lib/utils";
 
@@ -39,9 +38,6 @@ const Navbar = () => {
     )}>
       <div className="flex items-center justify-between">
         <Link to="/" className="flex items-center space-x-2">
-          <div className="h-8 w-8 rounded-md bg-primary flex items-center justify-center">
-            <span className="text-primary-foreground font-bold text-xl">E</span>
-          </div>
           <span className="font-display font-bold text-xl">EduEnroll</span>
         </Link>
         
@@ -70,7 +66,6 @@ const Navbar = () => {
         </button>
       </div>
       
-      {/* Mobile menu */}
       <div className={cn(
         "md:hidden fixed inset-x-0 bg-white/95 backdrop-blur-md transition-all duration-300 ease-out-expo",
         isMenuOpen ? "top-16 opacity-100" : "top-[-100%] opacity-0"
