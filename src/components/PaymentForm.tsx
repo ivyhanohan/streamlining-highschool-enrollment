@@ -9,7 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import { CreditCard, Smartphone, ArrowRight } from 'lucide-react';
 
 interface PaymentFormProps {
-  onPaymentComplete: () => void;
+  onPaymentComplete: (paymentMethod: string, paymentDetails: any) => void;
   onCancel: () => void;
 }
 
@@ -27,6 +27,11 @@ const PaymentForm: React.FC<PaymentFormProps> = ({ onPaymentComplete, onCancel }
     e.preventDefault();
     setIsProcessing(true);
 
+    // Prepare payment details
+    const paymentDetails = paymentMethod === 'credit-card' ? 
+      { ...cardInfo, type: 'credit-card' } : 
+      { gcashNumber, type: 'gcash' };
+
     // Simulate payment processing
     setTimeout(() => {
       setIsProcessing(false);
@@ -34,7 +39,7 @@ const PaymentForm: React.FC<PaymentFormProps> = ({ onPaymentComplete, onCancel }
         title: "Payment Successful",
         description: "Your enrollment fee payment of ₱1,000 has been processed.",
       });
-      onPaymentComplete();
+      onPaymentComplete(paymentMethod, paymentDetails);
     }, 2000);
   };
 
