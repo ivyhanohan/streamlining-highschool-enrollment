@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
@@ -14,6 +13,9 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { FileText, ArrowRight, Save, Upload, Trash2 } from 'lucide-react';
 import PaymentForm from "@/components/PaymentForm";
+import { db } from '@/lib/firebase';
+import { doc, setDoc, getDoc } from 'firebase/firestore';
+import { collection, addDoc } from 'firebase/firestore';
 
 // Required documents
 const requiredDocuments = [
@@ -88,31 +90,37 @@ const Enrollment = () => {
 
   // Load draft data on component mount
   useEffect(() => {
-    const savedDraft = localStorage.getItem('enrollmentDraft');
-    if (savedDraft) {
-      const parsed = JSON.parse(savedDraft);
-      form.reset(parsed);
+    const loadDraft = async () => {
+      // Get user ID (in a real app, this would come from authentication)
+      const userId = localStorage.getItem('currentUserId') || 'demo-user';
       
-      // Check if we need to show strand selection
-      if (parsed.gradeLevel && parseInt(parsed.gradeLevel) >= 11) {
-        setShowStrandSelection(true);
-      }
-      
-      // Also load saved documents if any
-      const savedDocuments = localStorage.getItem('uploadedDocuments');
-      if (savedDocuments) {
-        try {
-          // We can't store actual File objects in localStorage, 
-          // so we'll just acknowledge that documents were uploaded
-          toast({
-            title: "Draft Loaded",
-            description: "Your previously saved documents were noted. Please re-upload them."
-          });
-        } catch (error) {
-          console.error("Error loading saved documents:", error);
+      try {
+        const draftRef = doc(db, 'enrollmentDrafts', userId);
+        const draftSnap = await getDoc(draftRef);
+        
+        if (draftSnap.exists()) {
+          const draftData = draftSnap.data();
+          form.reset(draftData);
+          
+          // Check if we need to show strand selection
+          if (draftData.gradeLevel && parseInt(draftData.gradeLevel) >= 11) {
+            setShowStrandSelection(true);
+          }
+          
+          // Also load saved documents if any
+          if (draftData.uploadedDocuments) {
+            toast({
+              title: "Draft Loaded",
+              description: "Your previously saved documents were noted. Please re-upload them.",
+            });
+          }
         }
+      } catch (error) {
+        console.error("Error loading draft:", error);
       }
-    }
+    };
+    
+    loadDraft();
   }, [form, toast]);
 
   // Handle grade level change to show/hide strand selection
@@ -192,13 +200,17 @@ const Enrollment = () => {
     });
   };
 
-  const handlePaymentComplete = () => {
+  const handlePaymentComplete = async (paymentMethod: string, paymentDetails: any) => {
     if (!formData) return;
+    
+    // Get user ID (in a real app, this would come from authentication)
+    const userId = localStorage.getItem('currentUserId') || 'demo-user';
     
     // Create enrollment data object to store
     const enrollmentData = {
       ...formData,
       id: `APP-${new Date().getFullYear()}-${Math.floor(Math.random() * 10000).toString().padStart(5, '0')}`,
+      userId,
       submittedDate: new Date().toISOString().split('T')[0],
       status: "Pending",
       documents: uploadedDocuments.map(doc => ({
@@ -206,70 +218,94 @@ const Enrollment = () => {
         name: doc.name,
         status: "Pending",
         date: new Date().toISOString().split('T')[0]
-      }))
+      })),
+      payment: {
+        method: paymentMethod,
+        details: paymentDetails,
+        amount: 1000,
+        currency: "PHP",
+        date: new Date().toISOString()
+      }
     };
     
-    // Save enrollment data to localStorage (simulating database)
-    saveEnrollmentData(enrollmentData);
-    
-    // Clear the draft from local storage
-    localStorage.removeItem('enrollmentDraft');
-    localStorage.removeItem('uploadedDocuments');
-    
-    toast({
-      title: "Enrollment Completed",
-      description: "Your enrollment application has been submitted and payment received.",
-    });
-    
-    // Navigate to dashboard
-    navigate("/student/dashboard");
-  };
-
-  const saveEnrollmentData = (data: any) => {
-    // Get existing enrollments or initialize empty array
-    const existingEnrollments = JSON.parse(localStorage.getItem('enrollments') || '[]');
-    
-    // Add new enrollment
-    const updatedEnrollments = [...existingEnrollments, data];
-    
-    // Save back to localStorage
-    localStorage.setItem('enrollments', JSON.stringify(updatedEnrollments));
-    
-    // Also save to student's personal enrollment data
-    localStorage.setItem('currentStudentEnrollment', JSON.stringify(data));
+    try {
+      // Save enrollment data to Firestore
+      await setDoc(doc(db, 'enrollments', userId), enrollmentData);
+      
+      // Delete the draft after successful submission
+      try {
+        await setDoc(doc(db, 'enrollmentDrafts', userId), {}, { merge: true });
+      } catch (error) {
+        console.error("Error deleting draft:", error);
+      }
+      
+      toast({
+        title: "Enrollment Completed",
+        description: "Your enrollment application has been submitted and payment received.",
+      });
+      
+      // Navigate to dashboard
+      navigate("/student/dashboard");
+    } catch (error) {
+      console.error("Error saving enrollment:", error);
+      toast({
+        title: "Error",
+        description: "There was an error submitting your enrollment. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   const handlePaymentCancel = () => {
     setShowPayment(false);
   };
 
-  const handleSaveDraft = () => {
+  const handleSaveDraft = async () => {
     const values = form.getValues();
-    localStorage.setItem('enrollmentDraft', JSON.stringify(values));
     
-    // Save document upload state (we can't save the actual files)
-    localStorage.setItem('uploadedDocuments', JSON.stringify(
-      uploadedDocuments.map(doc => ({ id: doc.id, name: doc.name }))
-    ));
+    // Get user ID (in a real app, this would come from authentication)
+    const userId = localStorage.getItem('currentUserId') || 'demo-user';
     
-    setDraftSaved(true);
-    toast({
-      title: "Draft Saved",
-      description: "Your enrollment form has been saved as a draft.",
-    });
-    
-    // Reset the draft saved flag after 3 seconds
-    setTimeout(() => setDraftSaved(false), 3000);
+    try {
+      // Save to Firestore
+      await setDoc(doc(db, 'enrollmentDrafts', userId), {
+        ...values,
+        uploadedDocuments: uploadedDocuments.map(doc => ({ id: doc.id, name: doc.name })),
+        lastSaved: new Date().toISOString()
+      });
+      
+      setDraftSaved(true);
+      toast({
+        title: "Draft Saved",
+        description: "Your enrollment form has been saved as a draft.",
+      });
+      
+      // Reset the draft saved flag after 3 seconds
+      setTimeout(() => setDraftSaved(false), 3000);
+    } catch (error) {
+      console.error("Error saving draft:", error);
+      toast({
+        title: "Error",
+        description: "There was an error saving your draft. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
-  const handleClearForm = () => {
+  const handleClearForm = async () => {
     // Reset the form
     form.reset();
     // Clear uploaded documents
     setUploadedDocuments([]);
-    // Clear from localStorage
-    localStorage.removeItem('enrollmentDraft');
-    localStorage.removeItem('uploadedDocuments');
+    
+    // Clear from Firestore
+    const userId = localStorage.getItem('currentUserId') || 'demo-user';
+    try {
+      await setDoc(doc(db, 'enrollmentDrafts', userId), {});
+    } catch (error) {
+      console.error("Error clearing draft:", error);
+    }
+    
     // Reset strand selection
     setShowStrandSelection(false);
     

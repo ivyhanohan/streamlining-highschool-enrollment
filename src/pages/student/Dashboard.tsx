@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Clock, Calendar, CheckCircle, AlertCircle, Home } from 'lucide-react';
+import { db } from '@/lib/firebase';
+import { doc, getDoc } from 'firebase/firestore';
 
 // Type for application status
 type EnrollmentData = {
@@ -28,46 +30,73 @@ type EnrollmentData = {
 const Dashboard = () => {
   const navigate = useNavigate();
   const [applicationStatus, setApplicationStatus] = useState<EnrollmentData | null>(null);
+  const [loading, setLoading] = useState(true);
   
   useEffect(() => {
-    // Try to get enrollment data from localStorage
-    const enrollmentData = localStorage.getItem('currentStudentEnrollment');
+    // Get user ID (in a real app, this would come from authentication)
+    const userId = localStorage.getItem('currentUserId') || 'demo-user';
     
-    if (enrollmentData) {
-      const parsedData = JSON.parse(enrollmentData);
-      
-      // Ensure we have all required fields
-      const enrichedData = {
-        ...parsedData,
-        lastUpdated: parsedData.lastUpdated || new Date().toISOString().split('T')[0],
-        academicYear: parsedData.academicYear || `${new Date().getFullYear()}-${new Date().getFullYear() + 1}`
-      };
-      
-      setApplicationStatus(enrichedData);
-    } else {
-      // If no enrollment data found, use mock data
-      setApplicationStatus({
-        id: "APP-2023-12345",
-        firstName: "John",
-        lastName: "Doe",
-        email: "john.doe@example.com",
-        status: "Pending Review",
-        submittedDate: "2023-05-15",
-        lastUpdated: "2023-05-16",
-        academicYear: "2023-2024",
-        gradeLevel: "Grade 9",
-        documents: [
-          { id: 1, name: "Birth Certificate", status: "Verified", date: "2023-05-16" },
-          { id: 2, name: "Report Card / Form 138", status: "Pending", date: "2023-05-15" },
-          { id: 3, name: "Certificate of Good Moral Character", status: "Pending", date: "2023-05-15" },
-          { id: 4, name: "2x2 ID Pictures", status: "Pending", date: "2023-05-15" },
-        ]
-      });
-    }
+    const fetchEnrollmentData = async () => {
+      try {
+        const enrollmentRef = doc(db, 'enrollments', userId);
+        const enrollmentSnap = await getDoc(enrollmentRef);
+        
+        if (enrollmentSnap.exists()) {
+          setApplicationStatus(enrollmentSnap.data() as EnrollmentData);
+        } else {
+          // If no enrollment data found in Firebase, use mock data
+          setApplicationStatus({
+            id: "APP-2023-12345",
+            firstName: "John",
+            lastName: "Doe",
+            email: "john.doe@example.com",
+            status: "Pending Review",
+            submittedDate: "2023-05-15",
+            lastUpdated: "2023-05-16",
+            academicYear: "2023-2024",
+            gradeLevel: "Grade 9",
+            documents: [
+              { id: 1, name: "Birth Certificate", status: "Verified", date: "2023-05-16" },
+              { id: 2, name: "Report Card / Form 138", status: "Pending", date: "2023-05-15" },
+              { id: 3, name: "Certificate of Good Moral Character", status: "Pending", date: "2023-05-15" },
+              { id: 4, name: "2x2 ID Pictures", status: "Pending", date: "2023-05-15" },
+            ]
+          });
+        }
+      } catch (error) {
+        console.error("Error fetching enrollment data:", error);
+        // Use mock data as fallback
+        setApplicationStatus({
+          id: "APP-2023-12345",
+          firstName: "John",
+          lastName: "Doe",
+          email: "john.doe@example.com",
+          status: "Pending Review",
+          submittedDate: "2023-05-15",
+          lastUpdated: "2023-05-16",
+          academicYear: "2023-2024",
+          gradeLevel: "Grade 9",
+          documents: [
+            { id: 1, name: "Birth Certificate", status: "Verified", date: "2023-05-16" },
+            { id: 2, name: "Report Card / Form 138", status: "Pending", date: "2023-05-15" },
+            { id: 3, name: "Certificate of Good Moral Character", status: "Pending", date: "2023-05-15" },
+            { id: 4, name: "2x2 ID Pictures", status: "Pending", date: "2023-05-15" },
+          ]
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchEnrollmentData();
   }, []);
   
+  if (loading) {
+    return <div className="flex justify-center items-center min-h-screen">Loading...</div>;
+  }
+  
   if (!applicationStatus) {
-    return <div>Loading...</div>;
+    return <div className="flex justify-center items-center min-h-screen">No enrollment data found.</div>;
   }
   
   return (
