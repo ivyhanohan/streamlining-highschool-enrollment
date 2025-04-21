@@ -81,7 +81,7 @@ const PaymentForm: React.FC<PaymentFormProps> = ({ onPaymentComplete, onCancel }
                   <Label htmlFor="cardNumber">Card Number</Label>
                   <Input 
                     id="cardNumber"
-                    placeholder="1234 5678 9012 3456"
+                    placeholder=""
                     value={cardInfo.cardNumber}
                     onChange={(e) => setCardInfo({...cardInfo, cardNumber: e.target.value})}
                     required
@@ -92,7 +92,7 @@ const PaymentForm: React.FC<PaymentFormProps> = ({ onPaymentComplete, onCancel }
                   <Label htmlFor="cardName">Name on Card</Label>
                   <Input 
                     id="cardName"
-                    placeholder="John Doe"
+                    placeholder=""
                     value={cardInfo.cardName}
                     onChange={(e) => setCardInfo({...cardInfo, cardName: e.target.value})}
                     required

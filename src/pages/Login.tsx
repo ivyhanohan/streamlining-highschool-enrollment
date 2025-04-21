@@ -89,7 +89,7 @@ const Login = () => {
                   <FormItem>
                     <FormLabel>Email</FormLabel>
                     <FormControl>
-                      <Input placeholder="admin@school.edu" {...field} />
+                      <Input placeholder="" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -106,7 +106,7 @@ const Login = () => {
                       <div className="relative">
                         <Input 
                           type={showPassword ? "text" : "password"} 
-                          placeholder="••••••••" 
+                          placeholder="" 
                           {...field} 
                         />
                         <button 
@@ -123,11 +123,11 @@ const Login = () => {
                 )}
               />
               
-              <div className="bg-blue-50 p-3 rounded-md border border-blue-100">
+              {/* <div className="bg-blue-50 p-3 rounded-md border border-blue-100">
                 <p className="text-sm text-blue-700">
                   <strong>Admin Login:</strong> admin@school.edu / admin123
                 </p>
-              </div>
+              </div> */}
               
               <Button type="submit" className="w-full">
                 <LogIn className="mr-2 h-4 w-4" /> Log in

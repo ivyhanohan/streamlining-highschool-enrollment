@@ -330,7 +330,7 @@ const Enrollment = () => {
                         <FormItem>
                           <FormLabel>First Name</FormLabel>
                           <FormControl>
-                            <Input placeholder="John" {...field} />
+                            <Input placeholder="" {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -344,7 +344,7 @@ const Enrollment = () => {
                         <FormItem>
                           <FormLabel>Middle Name (Optional)</FormLabel>
                           <FormControl>
-                            <Input placeholder="Michael" {...field} />
+                            <Input placeholder="" {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -358,7 +358,7 @@ const Enrollment = () => {
                         <FormItem>
                           <FormLabel>Last Name</FormLabel>
                           <FormControl>
-                            <Input placeholder="Doe" {...field} />
+                            <Input placeholder="" {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -415,7 +415,7 @@ const Enrollment = () => {
                         <FormItem>
                           <FormLabel>Email</FormLabel>
                           <FormControl>
-                            <Input type="email" placeholder="john.doe@example.com" {...field} />
+                            <Input type="email" placeholder="" {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -435,7 +435,7 @@ const Enrollment = () => {
                         <FormItem>
                           <FormLabel>Street Address</FormLabel>
                           <FormControl>
-                            <Textarea placeholder="123 Main St, Apt 4B" {...field} />
+                            <Textarea placeholder="" {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -450,7 +450,7 @@ const Enrollment = () => {
                           <FormItem>
                             <FormLabel>City</FormLabel>
                             <FormControl>
-                              <Input placeholder="New York" {...field} />
+                              <Input placeholder="" {...field} />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -464,7 +464,7 @@ const Enrollment = () => {
                           <FormItem>
                             <FormLabel>State/Province</FormLabel>
                             <FormControl>
-                              <Input placeholder="NY" {...field} />
+                              <Input placeholder="" {...field} />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -478,7 +478,7 @@ const Enrollment = () => {
                           <FormItem>
                             <FormLabel>ZIP/Postal Code</FormLabel>
                             <FormControl>
-                              <Input placeholder="10001" {...field} />
+                              <Input placeholder="" {...field} />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -493,7 +493,7 @@ const Enrollment = () => {
                         <FormItem>
                           <FormLabel>Phone Number</FormLabel>
                           <FormControl>
-                            <Input placeholder="(555) 123-4567" {...field} />
+                            <Input placeholder="" {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -572,7 +572,7 @@ const Enrollment = () => {
                         <FormItem>
                           <FormLabel>Previous School (Optional)</FormLabel>
                           <FormControl>
-                            <Input placeholder="Lincoln Middle School" {...field} />
+                            <Input placeholder="" {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -592,7 +592,7 @@ const Enrollment = () => {
                         <FormItem>
                           <FormLabel>Contact Name</FormLabel>
                           <FormControl>
-                            <Input placeholder="Jane Doe" {...field} />
+                            <Input placeholder="" {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -607,7 +607,7 @@ const Enrollment = () => {
                           <FormItem>
                             <FormLabel>Contact Phone</FormLabel>
                             <FormControl>
-                              <Input placeholder="(555) 123-4567" {...field} />
+                              <Input placeholder="" {...field} />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -621,7 +621,7 @@ const Enrollment = () => {
                           <FormItem>
                             <FormLabel>Relationship</FormLabel>
                             <FormControl>
-                              <Input placeholder="Parent" {...field} />
+                              <Input placeholder="" {...field} />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
