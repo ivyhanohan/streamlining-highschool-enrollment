@@ -14,10 +14,14 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
   const { toast } = useToast();
 
   const handleLogout = () => {
+    // Clear the currentUser from localStorage
+    localStorage.removeItem('currentUser');
+    
     toast({
       title: "Logged Out",
       description: "You have been successfully logged out.",
     });
+    
     navigate("/");
   };
 

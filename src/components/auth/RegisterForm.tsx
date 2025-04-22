@@ -34,8 +34,10 @@ export function RegisterForm() {
       role: 'student'
     };
     
+    // Get existing registered users from localStorage
     const existingUsers = JSON.parse(localStorage.getItem('registeredUsers') || '[]');
     
+    // Check if a user with this email already exists
     const userExists = existingUsers.some((user: any) => user.email === values.email);
     
     if (userExists) {
@@ -47,10 +49,11 @@ export function RegisterForm() {
       return;
     }
     
+    // Add the new user to the existing users and save back to localStorage
     existingUsers.push(userWithRole);
-    
     localStorage.setItem('registeredUsers', JSON.stringify(existingUsers));
     
+    // Also set as current user (auto-login)
     localStorage.setItem('currentUser', JSON.stringify({
       email: values.email,
       firstName: values.firstName,
