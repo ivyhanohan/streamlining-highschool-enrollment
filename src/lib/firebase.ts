@@ -1,7 +1,5 @@
 
-// This is a placeholder file to prevent import errors
-// Firebase functionality has been removed and replaced with localStorage storage
-
+// This file now only contains auth-related helper functions
 export const auth = {
   // Placeholder methods to prevent errors in case any components still reference them
   signInWithEmailAndPassword: () => Promise.resolve(null),
