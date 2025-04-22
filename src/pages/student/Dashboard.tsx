@@ -1,12 +1,10 @@
-
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Clock, Calendar, CheckCircle, AlertCircle, Home } from 'lucide-react';
-import { db } from '@/lib/firebase';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc } from '@/lib/firebase';
 
 // Type for application status
 type EnrollmentData = {
@@ -38,13 +36,13 @@ const Dashboard = () => {
     
     const fetchEnrollmentData = async () => {
       try {
-        const enrollmentRef = doc(db, 'enrollments', userId);
-        const enrollmentSnap = await getDoc(enrollmentRef);
+        // Try to get enrollment data from localStorage first
+        const storedEnrollmentData = localStorage.getItem(`enrollments-${userId}`);
         
-        if (enrollmentSnap.exists()) {
-          setApplicationStatus(enrollmentSnap.data() as EnrollmentData);
+        if (storedEnrollmentData) {
+          setApplicationStatus(JSON.parse(storedEnrollmentData));
         } else {
-          // If no enrollment data found in Firebase, use mock data
+          // If not in localStorage, use mock data
           setApplicationStatus({
             id: "APP-2023-12345",
             firstName: "John",

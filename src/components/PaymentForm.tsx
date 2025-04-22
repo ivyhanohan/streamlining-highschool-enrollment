@@ -1,165 +1,263 @@
 
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useToast } from "@/hooks/use-toast";
-import { CreditCard, Smartphone, ArrowRight } from 'lucide-react';
+import { ArrowLeft, CreditCard, Landmark, Wallet } from 'lucide-react';
 
-interface PaymentFormProps {
+type PaymentFormProps = {
   onPaymentComplete: (paymentMethod: string, paymentDetails: any) => void;
   onCancel: () => void;
-}
+};
 
 const PaymentForm: React.FC<PaymentFormProps> = ({ onPaymentComplete, onCancel }) => {
-  const [paymentMethod, setPaymentMethod] = useState<'credit-card' | 'gcash'>('credit-card');
+  const [paymentMethod, setPaymentMethod] = useState("credit_card");
   const [isProcessing, setIsProcessing] = useState(false);
-  const [cardInfo, setCardInfo] = useState({
-    cardNumber: '',
-    cardName: ''
-  });
-  const [gcashNumber, setGcashNumber] = useState('');
   const { toast } = useToast();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  // Credit card state
+  const [cardNumber, setCardNumber] = useState("");
+  const [cardName, setCardName] = useState("");
+  const [expiry, setExpiry] = useState("");
+  const [cvc, setCvc] = useState("");
+
+  // Bank transfer state
+  const [accountName, setAccountName] = useState("");
+  const [accountNumber, setAccountNumber] = useState("");
+  const [bankName, setBankName] = useState("");
+
+  const handlePaymentSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setIsProcessing(true);
 
-    // Prepare payment details
-    const paymentDetails = paymentMethod === 'credit-card' ? 
-      { ...cardInfo, type: 'credit-card' } : 
-      { gcashNumber, type: 'gcash' };
+    // Validate based on payment method
+    if (paymentMethod === "credit_card") {
+      if (!cardNumber || !cardName || !expiry || !cvc) {
+        toast({
+          title: "Missing Information",
+          description: "Please fill in all credit card details.",
+          variant: "destructive",
+        });
+        setIsProcessing(false);
+        return;
+      }
+    } else if (paymentMethod === "bank_transfer") {
+      if (!accountName || !accountNumber || !bankName) {
+        toast({
+          title: "Missing Information",
+          description: "Please fill in all bank transfer details.",
+          variant: "destructive",
+        });
+        setIsProcessing(false);
+        return;
+      }
+    }
 
     // Simulate payment processing
     setTimeout(() => {
+      // Create payment details object based on payment method
+      const paymentDetails = paymentMethod === "credit_card"
+        ? {
+            cardNumber: cardNumber.replace(/\d(?=\d{4})/g, "*"),
+            cardName,
+            expiry
+          }
+        : {
+            accountName,
+            accountNumber: accountNumber.replace(/\d(?=\d{4})/g, "*"),
+            bankName
+          };
+
+      onPaymentComplete(paymentMethod, paymentDetails);
       setIsProcessing(false);
+
+      // Show success message
       toast({
         title: "Payment Successful",
-        description: "Your enrollment fee payment of ₱1,000 has been processed.",
+        description: "Your payment has been processed successfully.",
       });
-      onPaymentComplete(paymentMethod, paymentDetails);
     }, 2000);
   };
 
+  // Handle card number formatting
+  const formatCardNumber = (input: string) => {
+    // Remove non-digits
+    const value = input.replace(/\D/g, '');
+    // Add a space after every 4 digits
+    const formatted = value.replace(/(\d{4})(?=\d)/g, '$1 ');
+    return formatted.substring(0, 19); // Limit to 16 digits + 3 spaces
+  };
+
+  // Handle expiry date formatting
+  const formatExpiry = (input: string) => {
+    // Remove non-digits
+    const value = input.replace(/\D/g, '');
+    // Format as MM/YY
+    if (value.length > 2) {
+      return `${value.substring(0, 2)}/${value.substring(2, 4)}`;
+    }
+    return value;
+  };
+
   return (
-    <Card className="shadow-lg w-full max-w-2xl mx-auto">
+    <Card className="shadow-lg max-w-2xl mx-auto">
       <CardHeader>
-        <CardTitle>Enrollment Fee Payment</CardTitle>
+        <CardTitle className="text-2xl">Payment Information</CardTitle>
         <CardDescription>
-          Please pay the enrollment fee of ₱1,000 to complete your application
+          Please provide your payment details to complete enrollment.
         </CardDescription>
       </CardHeader>
+      
       <CardContent>
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={handlePaymentSubmit}>
           <div className="space-y-6">
             <div>
-              <h3 className="text-lg font-medium mb-3">Select Payment Method</h3>
+              <Label className="text-base font-medium mb-2 block">Select Payment Method</Label>
               <RadioGroup
-                defaultValue="credit-card"
                 value={paymentMethod}
-                onValueChange={(value) => setPaymentMethod(value as 'credit-card' | 'gcash')}
-                className="grid grid-cols-1 md:grid-cols-2 gap-4"
+                onValueChange={setPaymentMethod}
+                className="flex flex-col space-y-1 sm:flex-row sm:space-x-6 sm:space-y-0"
               >
                 <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="credit-card" id="credit-card" />
-                  <Label htmlFor="credit-card" className="flex items-center cursor-pointer">
-                    <CreditCard className="mr-2 h-5 w-5 text-primary" />
-                    Credit Card
+                  <RadioGroupItem value="credit_card" id="credit_card" />
+                  <Label htmlFor="credit_card" className="flex items-center">
+                    <CreditCard className="mr-2 h-4 w-4" /> Credit Card
                   </Label>
                 </div>
                 
                 <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="gcash" id="gcash" />
-                  <Label htmlFor="gcash" className="flex items-center cursor-pointer">
-                    <Smartphone className="mr-2 h-5 w-5 text-primary" />
-                    GCash
+                  <RadioGroupItem value="bank_transfer" id="bank_transfer" />
+                  <Label htmlFor="bank_transfer" className="flex items-center">
+                    <Landmark className="mr-2 h-4 w-4" /> Bank Transfer
                   </Label>
                 </div>
               </RadioGroup>
             </div>
-
-            {paymentMethod === 'credit-card' ? (
+            
+            {paymentMethod === "credit_card" && (
               <div className="space-y-4">
                 <div>
                   <Label htmlFor="cardNumber">Card Number</Label>
-                  <Input 
+                  <Input
                     id="cardNumber"
-                    placeholder=""
-                    value={cardInfo.cardNumber}
-                    onChange={(e) => setCardInfo({...cardInfo, cardNumber: e.target.value})}
-                    required
+                    placeholder="1234 5678 9012 3456"
+                    value={cardNumber}
+                    onChange={(e) => setCardNumber(formatCardNumber(e.target.value))}
+                    maxLength={19}
                   />
                 </div>
                 
                 <div>
-                  <Label htmlFor="cardName">Name on Card</Label>
-                  <Input 
+                  <Label htmlFor="cardName">Cardholder Name</Label>
+                  <Input
                     id="cardName"
-                    placeholder=""
-                    value={cardInfo.cardName}
-                    onChange={(e) => setCardInfo({...cardInfo, cardName: e.target.value})}
-                    required
-                  />
-                </div>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                <div>
-                  <Label htmlFor="gcashNumber">GCash Number</Label>
-                  <Input 
-                    id="gcashNumber"
-                    placeholder="09XX XXX XXXX"
-                    value={gcashNumber}
-                    onChange={(e) => setGcashNumber(e.target.value)}
-                    required
+                    placeholder="John Smith"
+                    value={cardName}
+                    onChange={(e) => setCardName(e.target.value)}
                   />
                 </div>
                 
-                <div className="bg-blue-50 p-4 rounded-md">
-                  <p className="text-sm text-blue-700">
-                    1. Open your GCash app
-                    <br />
-                    2. Enter the school's GCash number: 09123456789
-                    <br />
-                    3. Enter the amount: ₱1,000
-                    <br />
-                    4. Use your application reference as payment description
-                  </p>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="expiry">Expiration Date</Label>
+                    <Input
+                      id="expiry"
+                      placeholder="MM/YY"
+                      value={expiry}
+                      onChange={(e) => setExpiry(formatExpiry(e.target.value))}
+                      maxLength={5}
+                    />
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="cvc">CVC</Label>
+                    <Input
+                      id="cvc"
+                      placeholder="123"
+                      value={cvc}
+                      onChange={(e) => setCvc(e.target.value.replace(/\D/g, '').substring(0, 4))}
+                      maxLength={4}
+                    />
+                  </div>
                 </div>
               </div>
             )}
-
-            <div className="bg-muted p-4 rounded-md">
-              <div className="flex justify-between mb-2">
-                <span>Enrollment Fee:</span>
-                <span className="font-medium">₱1,000.00</span>
+            
+            {paymentMethod === "bank_transfer" && (
+              <div className="space-y-4">
+                <div>
+                  <Label htmlFor="bankName">Bank Name</Label>
+                  <Input
+                    id="bankName"
+                    placeholder="Bank Name"
+                    value={bankName}
+                    onChange={(e) => setBankName(e.target.value)}
+                  />
+                </div>
+                
+                <div>
+                  <Label htmlFor="accountName">Account Holder Name</Label>
+                  <Input
+                    id="accountName"
+                    placeholder="John Smith"
+                    value={accountName}
+                    onChange={(e) => setAccountName(e.target.value)}
+                  />
+                </div>
+                
+                <div>
+                  <Label htmlFor="accountNumber">Account Number</Label>
+                  <Input
+                    id="accountNumber"
+                    placeholder="123456789"
+                    value={accountNumber}
+                    onChange={(e) => setAccountNumber(e.target.value.replace(/\D/g, ''))}
+                  />
+                </div>
               </div>
-              <div className="border-t pt-2 flex justify-between font-bold">
-                <span>Total:</span>
-                <span>₱1,000.00</span>
+            )}
+            
+            <div className="bg-blue-50 p-4 rounded-md">
+              <div className="flex items-center">
+                <Wallet className="h-5 w-5 text-blue-600 mr-2" />
+                <h3 className="font-medium text-blue-800">Payment Summary</h3>
+              </div>
+              <div className="mt-3 text-sm">
+                <div className="flex justify-between py-1">
+                  <span>Enrollment Fee</span>
+                  <span>₱1,000.00</span>
+                </div>
+                <div className="flex justify-between py-1">
+                  <span>Processing Fee</span>
+                  <span>₱0.00</span>
+                </div>
+                <div className="flex justify-between pt-2 border-t mt-2 font-bold">
+                  <span>Total</span>
+                  <span>₱1,000.00</span>
+                </div>
               </div>
             </div>
           </div>
+          
+          <div className="flex justify-between mt-8">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={onCancel}
+              disabled={isProcessing}
+            >
+              <ArrowLeft className="mr-2 h-4 w-4" /> Back
+            </Button>
+            
+            <Button type="submit" disabled={isProcessing}>
+              {isProcessing ? "Processing..." : "Complete Payment"}
+            </Button>
+          </div>
         </form>
       </CardContent>
-      <CardFooter className="flex justify-between">
-        <Button type="button" variant="outline" onClick={onCancel}>
-          Cancel
-        </Button>
-        <Button 
-          onClick={handleSubmit} 
-          disabled={isProcessing}
-          className="min-w-[120px]"
-        >
-          {isProcessing ? (
-            <>Processing<span className="ml-2 animate-pulse">...</span></>
-          ) : (
-            <>Pay ₱1,000 <ArrowRight className="ml-2 h-4 w-4" /></>
-          )}
-        </Button>
-      </CardFooter>
     </Card>
   );
 };

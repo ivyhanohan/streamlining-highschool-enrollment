@@ -13,9 +13,6 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { FileText, ArrowRight, Save, Upload, Trash2 } from 'lucide-react';
 import PaymentForm from "@/components/PaymentForm";
-import { db } from '@/lib/firebase';
-import { doc, setDoc, getDoc } from 'firebase/firestore';
-import { collection, addDoc } from 'firebase/firestore';
 
 // Required documents
 const requiredDocuments = [
@@ -95,11 +92,12 @@ const Enrollment = () => {
       const userId = localStorage.getItem('currentUserId') || 'demo-user';
       
       try {
-        const draftRef = doc(db, 'enrollmentDrafts', userId);
-        const draftSnap = await getDoc(draftRef);
+        // Try to get the draft from localStorage
+        const draftKey = `enrollmentDrafts-${userId}`;
+        const storedDraft = localStorage.getItem(draftKey);
         
-        if (draftSnap.exists()) {
-          const draftData = draftSnap.data();
+        if (storedDraft) {
+          const draftData = JSON.parse(storedDraft);
           form.reset(draftData);
           
           // Check if we need to show strand selection
@@ -229,15 +227,17 @@ const Enrollment = () => {
     };
     
     try {
-      // Save enrollment data to Firestore
-      await setDoc(doc(db, 'enrollments', userId), enrollmentData);
+      // Store in localStorage instead of Firestore
+      const enrollmentKey = `enrollments-${userId}`;
+      localStorage.setItem(enrollmentKey, JSON.stringify(enrollmentData));
+      
+      // Save to enrollments array
+      const allEnrollments = JSON.parse(localStorage.getItem('enrollments') || '[]');
+      allEnrollments.push(enrollmentData);
+      localStorage.setItem('enrollments', JSON.stringify(allEnrollments));
       
       // Delete the draft after successful submission
-      try {
-        await setDoc(doc(db, 'enrollmentDrafts', userId), {}, { merge: true });
-      } catch (error) {
-        console.error("Error deleting draft:", error);
-      }
+      localStorage.removeItem(`enrollmentDrafts-${userId}`);
       
       toast({
         title: "Enrollment Completed",
@@ -267,12 +267,15 @@ const Enrollment = () => {
     const userId = localStorage.getItem('currentUserId') || 'demo-user';
     
     try {
-      // Save to Firestore
-      await setDoc(doc(db, 'enrollmentDrafts', userId), {
+      // Save to localStorage
+      const draftKey = `enrollmentDrafts-${userId}`;
+      const draftData = {
         ...values,
         uploadedDocuments: uploadedDocuments.map(doc => ({ id: doc.id, name: doc.name })),
         lastSaved: new Date().toISOString()
-      });
+      };
+      
+      localStorage.setItem(draftKey, JSON.stringify(draftData));
       
       setDraftSaved(true);
       toast({
@@ -298,13 +301,9 @@ const Enrollment = () => {
     // Clear uploaded documents
     setUploadedDocuments([]);
     
-    // Clear from Firestore
+    // Clear from localStorage
     const userId = localStorage.getItem('currentUserId') || 'demo-user';
-    try {
-      await setDoc(doc(db, 'enrollmentDrafts', userId), {});
-    } catch (error) {
-      console.error("Error clearing draft:", error);
-    }
+    localStorage.removeItem(`enrollmentDrafts-${userId}`);
     
     // Reset strand selection
     setShowStrandSelection(false);
