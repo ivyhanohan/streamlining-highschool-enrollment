@@ -43,8 +43,43 @@ const Register = () => {
   });
 
   const onSubmit = (values: FormValues) => {
-    // Mock registration functionality (in a real app, this would connect to a backend)
-    console.log("Registration data:", values);
+    // Remove confirmPassword before saving
+    const { confirmPassword, ...userData } = values;
+    
+    // Add role to user data
+    const userWithRole = {
+      ...userData,
+      role: 'student'
+    };
+    
+    // Get existing registered users or create an empty array
+    const existingUsers = JSON.parse(localStorage.getItem('registeredUsers') || '[]');
+    
+    // Check if user already exists
+    const userExists = existingUsers.some((user: any) => user.email === values.email);
+    
+    if (userExists) {
+      toast({
+        title: "Registration Failed",
+        description: "A user with this email already exists.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    // Add new user to the array
+    existingUsers.push(userWithRole);
+    
+    // Save updated array back to localStorage
+    localStorage.setItem('registeredUsers', JSON.stringify(existingUsers));
+    
+    // Set current user for session management
+    localStorage.setItem('currentUser', JSON.stringify({
+      email: values.email,
+      firstName: values.firstName,
+      lastName: values.lastName,
+      role: 'student'
+    }));
     
     toast({
       title: "Registration Successful",

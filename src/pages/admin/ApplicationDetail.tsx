@@ -1,598 +1,433 @@
-
-import React, { useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Textarea } from "@/components/ui/textarea";
-import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
-import { 
-  UserCircle, 
-  Mail, 
-  Phone, 
-  MapPin, 
-  Calendar, 
-  School, 
-  FileText, 
-  Download, 
-  CheckCircle, 
-  AlertCircle, 
-  ArrowLeft, 
-  Edit, 
-  Save
-} from 'lucide-react';
+import { ArrowLeft, CheckCircle, XCircle, Clock, FileText, User, Calendar, School, MapPin } from 'lucide-react';
+import AdminLayout from '@/components/layouts/AdminLayout';
 
-// Mock student data
-const studentData = {
-  id: "APP-2023-0003",
-  personalInfo: {
-    firstName: "Robert",
-    middleName: "James",
-    lastName: "Johnson",
-    dateOfBirth: "2007-08-15",
-    gender: "Male",
-    email: "robert.johnson@example.com",
-    phone: "(555) 123-4567",
-    address: "789 Oak Street, Apt 12",
-    city: "Springfield",
-    state: "IL",
-    zipCode: "62704"
+// Mock application data - in a real app, this would come from a database
+const mockApplications = [
+  {
+    id: "app1",
+    studentName: "John Smith",
+    email: "john.smith@example.com",
+    dateOfBirth: "2006-05-15",
+    grade: "9",
+    previousSchool: "Lincoln Middle School",
+    address: "123 Main St, Anytown, USA",
+    parentName: "Mary Smith",
+    parentEmail: "mary.smith@example.com",
+    parentPhone: "(555) 123-4567",
+    documents: [
+      { name: "Birth Certificate", status: "verified" },
+      { name: "Proof of Address", status: "pending" },
+      { name: "Academic Records", status: "verified" }
+    ],
+    status: "under_review",
+    submittedDate: "2023-03-10",
+    notes: [
+      { date: "2023-03-12", author: "Admin", content: "Called parent to request additional documentation." },
+      { date: "2023-03-15", author: "Admin", content: "Received updated proof of address, reviewing now." }
+    ]
   },
-  educationalInfo: {
-    gradeLevel: "Grade 11",
-    previousSchool: "Springfield Middle School",
-    previousGPA: "3.8",
-    desiredProgram: "Science and Technology"
-  },
-  documents: [
-    { name: "Birth Certificate", status: "Verified", date: "2023-05-12", link: "#" },
-    { name: "Report Card / Form 138", status: "Verified", date: "2023-05-12", link: "#" },
-    { name: "Certificate of Good Moral Character", status: "Pending", date: "2023-05-12", link: "#" },
-    { name: "2x2 ID Pictures", status: "Verified", date: "2023-05-12", link: "#" },
-    { name: "Medical Certificate", status: "Not Submitted", date: "-", link: "#" },
-  ],
-  emergencyContact: {
-    name: "Margaret Johnson",
-    relationship: "Mother",
-    phone: "(555) 987-6543",
-    email: "margaret.johnson@example.com",
-    address: "Same as student"
-  },
-  status: "Pending",
-  submittedDate: "2023-05-12",
-  lastUpdated: "2023-05-13",
-  notes: "Student has expressed interest in joining the debate club."
-};
+  {
+    id: "app2",
+    studentName: "Emma Johnson",
+    email: "emma.johnson@example.com",
+    dateOfBirth: "2005-11-22",
+    grade: "10",
+    previousSchool: "Washington High School",
+    address: "456 Oak Ave, Somewhere, USA",
+    parentName: "Robert Johnson",
+    parentEmail: "robert.johnson@example.com",
+    parentPhone: "(555) 987-6543",
+    documents: [
+      { name: "Birth Certificate", status: "verified" },
+      { name: "Proof of Address", status: "verified" },
+      { name: "Academic Records", status: "verified" }
+    ],
+    status: "approved",
+    submittedDate: "2023-02-28",
+    notes: [
+      { date: "2023-03-01", author: "Admin", content: "All documents verified, application looks good." },
+      { date: "2023-03-05", author: "Admin", content: "Approved for enrollment. Welcome email sent." }
+    ]
+  }
+];
 
 const ApplicationDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
-  
-  const [status, setStatus] = useState(studentData.status);
-  const [notes, setNotes] = useState(studentData.notes);
-  const [isEditing, setIsEditing] = useState(false);
-  const [editedStudent, setEditedStudent] = useState(studentData);
-  
+  const [application, setApplication] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [newNote, setNewNote] = useState("");
+
+  useEffect(() => {
+    // In a real app, this would fetch from a database
+    const fetchApplication = () => {
+      setLoading(true);
+      
+      // Find the application in our mock data
+      const foundApp = mockApplications.find(app => app.id === id);
+      
+      if (foundApp) {
+        setApplication(foundApp);
+      }
+      
+      setLoading(false);
+    };
+    
+    fetchApplication();
+  }, [id]);
+
   const handleStatusChange = (newStatus: string) => {
-    setStatus(newStatus);
+    // In a real app, this would update the database
+    setApplication({
+      ...application,
+      status: newStatus
+    });
     
     toast({
       title: "Status Updated",
-      description: `Application status has been changed to ${newStatus}.`,
+      description: `Application status changed to ${newStatus.replace('_', ' ')}.`,
     });
   };
-  
-  const handleSaveNotes = () => {
-    toast({
-      title: "Notes Saved",
-      description: "Application notes have been updated.",
-    });
-  };
-  
-  const toggleEdit = () => {
-    setIsEditing(!isEditing);
+
+  const handleAddNote = () => {
+    if (!newNote.trim()) return;
     
-    // When canceling edit, revert changes
-    if (isEditing) {
-      setEditedStudent(studentData);
-    }
-  };
-  
-  const handleSaveChanges = () => {
-    // In a real app, this would send updated data to the server
-    
-    toast({
-      title: "Changes Saved",
-      description: "Student information has been updated.",
-    });
-    
-    setIsEditing(false);
-  };
-  
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>, section: string, field: string) => {
-    setEditedStudent({
-      ...editedStudent,
-      [section]: {
-        ...editedStudent[section as keyof typeof editedStudent],
-        [field]: e.target.value
+    // In a real app, this would update the database
+    const updatedNotes = [
+      ...application.notes,
+      {
+        date: new Date().toISOString().split('T')[0],
+        author: "Admin",
+        content: newNote
       }
+    ];
+    
+    setApplication({
+      ...application,
+      notes: updatedNotes
+    });
+    
+    setNewNote("");
+    
+    toast({
+      title: "Note Added",
+      description: "Your note has been added to this application.",
     });
   };
-  
-  const getStatusIcon = (status: string) => {
-    switch (status.toLowerCase()) {
-      case "verified":
-        return <CheckCircle className="mr-2 h-4 w-4 text-green-500" />;
-      case "pending":
-        return <AlertCircle className="mr-2 h-4 w-4 text-amber-500" />;
-      case "not submitted":
-        return <AlertCircle className="mr-2 h-4 w-4 text-red-500" />;
-      default:
-        return null;
-    }
+
+  const handleDocumentStatusChange = (documentName: string, newStatus: string) => {
+    // In a real app, this would update the database
+    const updatedDocuments = application.documents.map((doc: any) => 
+      doc.name === documentName ? { ...doc, status: newStatus } : doc
+    );
+    
+    setApplication({
+      ...application,
+      documents: updatedDocuments
+    });
+    
+    toast({
+      title: "Document Status Updated",
+      description: `${documentName} status changed to ${newStatus}.`,
+    });
   };
-  
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-100 py-8 px-4">
-      <div className="max-w-6xl mx-auto">
-        <div className="flex justify-between items-center mb-6">
-          <Button variant="outline" onClick={() => navigate("/admin/dashboard")}>
+
+  if (loading) {
+    return (
+      <AdminLayout>
+        <div className="flex items-center justify-center h-full">
+          <p>Loading application details...</p>
+        </div>
+      </AdminLayout>
+    );
+  }
+
+  if (!application) {
+    return (
+      <AdminLayout>
+        <div className="flex flex-col items-center justify-center h-full">
+          <h2 className="text-2xl font-bold mb-4">Application Not Found</h2>
+          <p className="mb-6">The application you're looking for doesn't exist or has been removed.</p>
+          <Button onClick={() => navigate('/admin/dashboard')}>
             <ArrowLeft className="mr-2 h-4 w-4" /> Back to Dashboard
           </Button>
-          
-          <div className="flex space-x-2">
-            <Button variant="outline" onClick={toggleEdit}>
-              {isEditing ? "Cancel" : <><Edit className="mr-2 h-4 w-4" /> Edit</>}
-            </Button>
-            
-            {isEditing && (
-              <Button onClick={handleSaveChanges}>
-                <Save className="mr-2 h-4 w-4" /> Save Changes
-              </Button>
-            )}
+        </div>
+      </AdminLayout>
+    );
+  }
+
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case 'approved':
+        return <Badge className="bg-green-500">Approved</Badge>;
+      case 'rejected':
+        return <Badge className="bg-red-500">Rejected</Badge>;
+      case 'under_review':
+        return <Badge className="bg-yellow-500">Under Review</Badge>;
+      case 'pending':
+        return <Badge className="bg-blue-500">Pending</Badge>;
+      default:
+        return <Badge>{status}</Badge>;
+    }
+  };
+
+  const getDocumentStatusIcon = (status: string) => {
+    switch (status) {
+      case 'verified':
+        return <CheckCircle className="h-5 w-5 text-green-500" />;
+      case 'rejected':
+        return <XCircle className="h-5 w-5 text-red-500" />;
+      case 'pending':
+        return <Clock className="h-5 w-5 text-yellow-500" />;
+      default:
+        return <FileText className="h-5 w-5 text-gray-500" />;
+    }
+  };
+
+  return (
+    <AdminLayout>
+      <div className="container mx-auto py-6">
+        <div className="flex items-center mb-6">
+          <Button variant="outline" onClick={() => navigate('/admin/dashboard')} className="mr-4">
+            <ArrowLeft className="mr-2 h-4 w-4" /> Back
+          </Button>
+          <h1 className="text-3xl font-bold">Application Details</h1>
+          <div className="ml-auto">
+            {getStatusBadge(application.status)}
           </div>
         </div>
         
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Left Column */}
-          <div className="lg:col-span-2 space-y-6">
-            {/* Student Details Card */}
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <div>
-                  <CardTitle className="text-2xl">Student Details</CardTitle>
-                  <CardDescription>
-                    Application ID: {editedStudent.id}
-                  </CardDescription>
-                </div>
-                
-                <div className={`px-4 py-1 rounded-full text-sm font-medium ${
-                  status === "Approved" ? "bg-green-100 text-green-700" :
-                  status === "Rejected" ? "bg-red-100 text-red-700" :
-                  "bg-amber-100 text-amber-700"
-                }`}>
-                  {status}
-                </div>
-              </CardHeader>
-              
-              <CardContent className="pt-6">
-                <div className="space-y-6">
-                  {/* Personal Information */}
-                  <div>
-                    <h3 className="text-lg font-medium flex items-center mb-4">
-                      <UserCircle className="mr-2 h-5 w-5 text-primary" />
-                      Personal Information
-                    </h3>
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <label className="text-sm text-muted-foreground block">Full Name</label>
-                        {isEditing ? (
-                          <div className="grid grid-cols-3 gap-2">
-                            <Input 
-                              value={editedStudent.personalInfo.firstName} 
-                              onChange={(e) => handleInputChange(e, "personalInfo", "firstName")}
-                            />
-                            <Input 
-                              value={editedStudent.personalInfo.middleName} 
-                              onChange={(e) => handleInputChange(e, "personalInfo", "middleName")}
-                            />
-                            <Input 
-                              value={editedStudent.personalInfo.lastName} 
-                              onChange={(e) => handleInputChange(e, "personalInfo", "lastName")}
-                            />
-                          </div>
-                        ) : (
-                          <p className="font-medium">
-                            {editedStudent.personalInfo.firstName} {editedStudent.personalInfo.middleName} {editedStudent.personalInfo.lastName}
-                          </p>
-                        )}
-                      </div>
-                      
-                      <div>
-                        <label className="text-sm text-muted-foreground block">Date of Birth</label>
-                        {isEditing ? (
-                          <Input 
-                            type="date" 
-                            value={editedStudent.personalInfo.dateOfBirth} 
-                            onChange={(e) => handleInputChange(e, "personalInfo", "dateOfBirth")}
-                          />
-                        ) : (
-                          <p className="font-medium">
-                            {new Date(editedStudent.personalInfo.dateOfBirth).toLocaleDateString('en-US', {
-                              month: 'long', 
-                              day: 'numeric', 
-                              year: 'numeric'
-                            })}
-                          </p>
-                        )}
-                      </div>
-                      
-                      <div>
-                        <label className="text-sm text-muted-foreground block">Gender</label>
-                        {isEditing ? (
-                          <Input 
-                            value={editedStudent.personalInfo.gender} 
-                            onChange={(e) => handleInputChange(e, "personalInfo", "gender")}
-                          />
-                        ) : (
-                          <p className="font-medium">{editedStudent.personalInfo.gender}</p>
-                        )}
-                      </div>
-                      
-                      <div>
-                        <label className="text-sm text-muted-foreground block">Email</label>
-                        <div className="flex items-center">
-                          <Mail className="mr-2 h-4 w-4 text-muted-foreground" />
-                          {isEditing ? (
-                            <Input 
-                              value={editedStudent.personalInfo.email} 
-                              onChange={(e) => handleInputChange(e, "personalInfo", "email")}
-                            />
-                          ) : (
-                            <p className="font-medium">{editedStudent.personalInfo.email}</p>
-                          )}
-                        </div>
-                      </div>
-                      
-                      <div>
-                        <label className="text-sm text-muted-foreground block">Phone</label>
-                        <div className="flex items-center">
-                          <Phone className="mr-2 h-4 w-4 text-muted-foreground" />
-                          {isEditing ? (
-                            <Input 
-                              value={editedStudent.personalInfo.phone} 
-                              onChange={(e) => handleInputChange(e, "personalInfo", "phone")}
-                            />
-                          ) : (
-                            <p className="font-medium">{editedStudent.personalInfo.phone}</p>
-                          )}
-                        </div>
-                      </div>
-                      
-                      <div className="md:col-span-2">
-                        <label className="text-sm text-muted-foreground block">Address</label>
-                        <div className="flex items-start">
-                          <MapPin className="mr-2 h-4 w-4 text-muted-foreground mt-1" />
-                          {isEditing ? (
-                            <div className="grid grid-cols-1 gap-2 w-full">
-                              <Input 
-                                value={editedStudent.personalInfo.address} 
-                                onChange={(e) => handleInputChange(e, "personalInfo", "address")}
-                              />
-                              <div className="grid grid-cols-3 gap-2">
-                                <Input 
-                                  placeholder="City"
-                                  value={editedStudent.personalInfo.city} 
-                                  onChange={(e) => handleInputChange(e, "personalInfo", "city")}
-                                />
-                                <Input 
-                                  placeholder="State"
-                                  value={editedStudent.personalInfo.state} 
-                                  onChange={(e) => handleInputChange(e, "personalInfo", "state")}
-                                />
-                                <Input 
-                                  placeholder="ZIP Code"
-                                  value={editedStudent.personalInfo.zipCode} 
-                                  onChange={(e) => handleInputChange(e, "personalInfo", "zipCode")}
-                                />
-                              </div>
-                            </div>
-                          ) : (
-                            <p className="font-medium">
-                              {editedStudent.personalInfo.address}, {editedStudent.personalInfo.city}, {editedStudent.personalInfo.state} {editedStudent.personalInfo.zipCode}
-                            </p>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  {/* Educational Information */}
-                  <div>
-                    <h3 className="text-lg font-medium flex items-center mb-4">
-                      <School className="mr-2 h-5 w-5 text-primary" />
-                      Educational Information
-                    </h3>
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <label className="text-sm text-muted-foreground block">Grade Level</label>
-                        {isEditing ? (
-                          <Input 
-                            value={editedStudent.educationalInfo.gradeLevel} 
-                            onChange={(e) => handleInputChange(e, "educationalInfo", "gradeLevel")}
-                          />
-                        ) : (
-                          <p className="font-medium">{editedStudent.educationalInfo.gradeLevel}</p>
-                        )}
-                      </div>
-                      
-                      <div>
-                        <label className="text-sm text-muted-foreground block">Previous School</label>
-                        {isEditing ? (
-                          <Input 
-                            value={editedStudent.educationalInfo.previousSchool} 
-                            onChange={(e) => handleInputChange(e, "educationalInfo", "previousSchool")}
-                          />
-                        ) : (
-                          <p className="font-medium">{editedStudent.educationalInfo.previousSchool}</p>
-                        )}
-                      </div>
-                      
-                      <div>
-                        <label className="text-sm text-muted-foreground block">Previous GPA</label>
-                        {isEditing ? (
-                          <Input 
-                            value={editedStudent.educationalInfo.previousGPA} 
-                            onChange={(e) => handleInputChange(e, "educationalInfo", "previousGPA")}
-                          />
-                        ) : (
-                          <p className="font-medium">{editedStudent.educationalInfo.previousGPA}</p>
-                        )}
-                      </div>
-                      
-                      <div>
-                        <label className="text-sm text-muted-foreground block">Desired Program</label>
-                        {isEditing ? (
-                          <Input 
-                            value={editedStudent.educationalInfo.desiredProgram} 
-                            onChange={(e) => handleInputChange(e, "educationalInfo", "desiredProgram")}
-                          />
-                        ) : (
-                          <p className="font-medium">{editedStudent.educationalInfo.desiredProgram}</p>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                  
-                  {/* Emergency Contact */}
-                  <div>
-                    <h3 className="text-lg font-medium flex items-center mb-4">
-                      <Phone className="mr-2 h-5 w-5 text-primary" />
-                      Emergency Contact
-                    </h3>
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <label className="text-sm text-muted-foreground block">Name</label>
-                        {isEditing ? (
-                          <Input 
-                            value={editedStudent.emergencyContact.name} 
-                            onChange={(e) => handleInputChange(e, "emergencyContact", "name")}
-                          />
-                        ) : (
-                          <p className="font-medium">{editedStudent.emergencyContact.name}</p>
-                        )}
-                      </div>
-                      
-                      <div>
-                        <label className="text-sm text-muted-foreground block">Relationship</label>
-                        {isEditing ? (
-                          <Input 
-                            value={editedStudent.emergencyContact.relationship} 
-                            onChange={(e) => handleInputChange(e, "emergencyContact", "relationship")}
-                          />
-                        ) : (
-                          <p className="font-medium">{editedStudent.emergencyContact.relationship}</p>
-                        )}
-                      </div>
-                      
-                      <div>
-                        <label className="text-sm text-muted-foreground block">Phone</label>
-                        {isEditing ? (
-                          <Input 
-                            value={editedStudent.emergencyContact.phone} 
-                            onChange={(e) => handleInputChange(e, "emergencyContact", "phone")}
-                          />
-                        ) : (
-                          <p className="font-medium">{editedStudent.emergencyContact.phone}</p>
-                        )}
-                      </div>
-                      
-                      <div>
-                        <label className="text-sm text-muted-foreground block">Email</label>
-                        {isEditing ? (
-                          <Input 
-                            value={editedStudent.emergencyContact.email} 
-                            onChange={(e) => handleInputChange(e, "emergencyContact", "email")}
-                          />
-                        ) : (
-                          <p className="font-medium">{editedStudent.emergencyContact.email}</p>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-            
-            {/* Documents Card */}
+          <div className="lg:col-span-2">
             <Card>
               <CardHeader>
-                <CardTitle>Submitted Documents</CardTitle>
-                <CardDescription>
-                  Review and verify student documents
-                </CardDescription>
+                <CardTitle>Student Information</CardTitle>
+                <CardDescription>Personal details and application information</CardDescription>
               </CardHeader>
               <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Document</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Date</TableHead>
-                      <TableHead>Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {editedStudent.documents.map((doc, index) => (
-                      <TableRow key={index}>
-                        <TableCell>{doc.name}</TableCell>
-                        <TableCell>
+                <Tabs defaultValue="details">
+                  <TabsList className="mb-4">
+                    <TabsTrigger value="details">Details</TabsTrigger>
+                    <TabsTrigger value="documents">Documents</TabsTrigger>
+                    <TabsTrigger value="notes">Notes</TabsTrigger>
+                  </TabsList>
+                  
+                  <TabsContent value="details">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div>
+                        <h3 className="text-lg font-medium mb-4">Student Details</h3>
+                        <div className="space-y-3">
+                          <div className="flex items-start">
+                            <User className="h-5 w-5 mr-2 text-muted-foreground" />
+                            <div>
+                              <p className="font-medium">Full Name</p>
+                              <p className="text-muted-foreground">{application.studentName}</p>
+                            </div>
+                          </div>
+                          <div className="flex items-start">
+                            <Calendar className="h-5 w-5 mr-2 text-muted-foreground" />
+                            <div>
+                              <p className="font-medium">Date of Birth</p>
+                              <p className="text-muted-foreground">{application.dateOfBirth}</p>
+                            </div>
+                          </div>
+                          <div className="flex items-start">
+                            <School className="h-5 w-5 mr-2 text-muted-foreground" />
+                            <div>
+                              <p className="font-medium">Previous School</p>
+                              <p className="text-muted-foreground">{application.previousSchool}</p>
+                            </div>
+                          </div>
+                          <div className="flex items-start">
+                            <MapPin className="h-5 w-5 mr-2 text-muted-foreground" />
+                            <div>
+                              <p className="font-medium">Address</p>
+                              <p className="text-muted-foreground">{application.address}</p>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <div>
+                        <h3 className="text-lg font-medium mb-4">Parent/Guardian Details</h3>
+                        <div className="space-y-3">
+                          <div className="flex items-start">
+                            <User className="h-5 w-5 mr-2 text-muted-foreground" />
+                            <div>
+                              <p className="font-medium">Full Name</p>
+                              <p className="text-muted-foreground">{application.parentName}</p>
+                            </div>
+                          </div>
+                          <div className="flex items-start">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 text-muted-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                            </svg>
+                            <div>
+                              <p className="font-medium">Email</p>
+                              <p className="text-muted-foreground">{application.parentEmail}</p>
+                            </div>
+                          </div>
+                          <div className="flex items-start">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 text-muted-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                            </svg>
+                            <div>
+                              <p className="font-medium">Phone</p>
+                              <p className="text-muted-foreground">{application.parentPhone}</p>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </TabsContent>
+                  
+                  <TabsContent value="documents">
+                    <div className="space-y-4">
+                      <h3 className="text-lg font-medium mb-4">Required Documents</h3>
+                      
+                      {application.documents.map((doc: any, index: number) => (
+                        <div key={index} className="flex items-center justify-between p-4 border rounded-md">
                           <div className="flex items-center">
-                            {getStatusIcon(doc.status)}
-                            <span>{doc.status}</span>
+                            {getDocumentStatusIcon(doc.status)}
+                            <span className="ml-2">{doc.name}</span>
                           </div>
-                        </TableCell>
-                        <TableCell>{doc.date}</TableCell>
-                        <TableCell>
-                          <div className="flex space-x-2">
-                            <Button variant="outline" size="sm" className="h-8 w-8 p-0">
-                              <FileText className="h-4 w-4" />
+                          <div className="flex items-center space-x-2">
+                            <Button 
+                              size="sm" 
+                              variant={doc.status === 'verified' ? 'default' : 'outline'} 
+                              onClick={() => handleDocumentStatusChange(doc.name, 'verified')}
+                              className={doc.status === 'verified' ? 'bg-green-500 hover:bg-green-600' : ''}
+                            >
+                              Verify
                             </Button>
-                            <Button variant="outline" size="sm" className="h-8 w-8 p-0">
-                              <Download className="h-4 w-4" />
+                            <Button 
+                              size="sm" 
+                              variant={doc.status === 'rejected' ? 'default' : 'outline'} 
+                              onClick={() => handleDocumentStatusChange(doc.name, 'rejected')}
+                              className={doc.status === 'rejected' ? 'bg-red-500 hover:bg-red-600' : ''}
+                            >
+                              Reject
                             </Button>
                           </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+                        </div>
+                      ))}
+                    </div>
+                  </TabsContent>
+                  
+                  <TabsContent value="notes">
+                    <div className="space-y-4">
+                      <h3 className="text-lg font-medium mb-4">Application Notes</h3>
+                      
+                      <div className="flex space-x-2 mb-4">
+                        <input
+                          type="text"
+                          value={newNote}
+                          onChange={(e) => setNewNote(e.target.value)}
+                          placeholder="Add a note about this application..."
+                          className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                        />
+                        <Button onClick={handleAddNote}>Add Note</Button>
+                      </div>
+                      
+                      <div className="space-y-3">
+                        {application.notes.length > 0 ? (
+                          application.notes.map((note: any, index: number) => (
+                            <div key={index} className="p-3 border rounded-md">
+                              <div className="flex justify-between items-center mb-1">
+                                <span className="font-medium">{note.author}</span>
+                                <span className="text-sm text-muted-foreground">{note.date}</span>
+                              </div>
+                              <p>{note.content}</p>
+                            </div>
+                          ))
+                        ) : (
+                          <p className="text-muted-foreground">No notes have been added yet.</p>
+                        )}
+                      </div>
+                    </div>
+                  </TabsContent>
+                </Tabs>
               </CardContent>
             </Card>
           </div>
           
-          {/* Right Column */}
-          <div className="space-y-6">
-            {/* Status Card */}
+          <div>
             <Card>
               <CardHeader>
                 <CardTitle>Application Status</CardTitle>
-                <CardDescription>
-                  Update the status of this application
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm text-muted-foreground">Current Status:</span>
-                    <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-                      status === "Approved" ? "bg-green-100 text-green-700" :
-                      status === "Rejected" ? "bg-red-100 text-red-700" :
-                      "bg-amber-100 text-amber-700"
-                    }`}>
-                      {status}
-                    </span>
-                  </div>
-                  
-                  <div className="text-sm space-y-1">
-                    <div className="flex justify-between">
-                      <span>Submitted:</span>
-                      <span>{editedStudent.submittedDate}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span>Last Updated:</span>
-                      <span>{editedStudent.lastUpdated}</span>
-                    </div>
-                  </div>
-                </div>
-                
-                <div className="pt-4 space-y-2">
-                  <Button 
-                    className="w-full bg-green-600 hover:bg-green-700 text-white"
-                    onClick={() => handleStatusChange("Approved")}
-                    disabled={status === "Approved"}
-                  >
-                    <CheckCircle className="mr-2 h-4 w-4" /> Approve Application
-                  </Button>
-                  
-                  <Button 
-                    className="w-full bg-amber-500 hover:bg-amber-600 text-white"
-                    onClick={() => handleStatusChange("Pending")}
-                    disabled={status === "Pending"}
-                  >
-                    <Calendar className="mr-2 h-4 w-4" /> Mark as Pending
-                  </Button>
-                  
-                  <Button 
-                    className="w-full bg-red-600 hover:bg-red-700 text-white"
-                    onClick={() => handleStatusChange("Rejected")}
-                    disabled={status === "Rejected"}
-                  >
-                    <AlertCircle className="mr-2 h-4 w-4" /> Reject Application
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-            
-            {/* Notes Card */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Notes</CardTitle>
-                <CardDescription>
-                  Add private notes to this application
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Textarea 
-                  placeholder="Add notes about this student..." 
-                  className="min-h-[150px]"
-                  value={notes}
-                  onChange={(e) => setNotes(e.target.value)}
-                />
-              </CardContent>
-              <CardFooter>
-                <Button onClick={handleSaveNotes} className="w-full">
-                  <Save className="mr-2 h-4 w-4" /> Save Notes
-                </Button>
-              </CardFooter>
-            </Card>
-            
-            {/* Quick Info Card */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Application History</CardTitle>
+                <CardDescription>Submitted on {application.submittedDate}</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  <div className="border-l-2 border-primary pl-4">
-                    <p className="text-sm text-muted-foreground">May 13, 2023 - 10:45 AM</p>
-                    <p className="font-medium">Initial review completed</p>
-                    <p className="text-sm">by Admin User</p>
-                  </div>
-                  
-                  <div className="border-l-2 border-primary pl-4">
-                    <p className="text-sm text-muted-foreground">May 12, 2023 - 2:30 PM</p>
-                    <p className="font-medium">Documents received</p>
-                    <p className="text-sm">Birth Certificate, Report Card verified</p>
-                  </div>
-                  
-                  <div className="border-l-2 border-primary pl-4">
-                    <p className="text-sm text-muted-foreground">May 12, 2023 - 9:15 AM</p>
-                    <p className="font-medium">Application submitted</p>
-                    <p className="text-sm">by Robert Johnson</p>
-                  </div>
+                  <Button 
+                    className={`w-full ${application.status === 'approved' ? 'bg-green-500 hover:bg-green-600' : ''}`}
+                    onClick={() => handleStatusChange('approved')}
+                  >
+                    <CheckCircle className="mr-2 h-4 w-4" /> Approve
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    className={`w-full ${application.status === 'under_review' ? 'bg-yellow-500 hover:bg-yellow-600 text-white' : ''}`}
+                    onClick={() => handleStatusChange('under_review')}
+                  >
+                    <Clock className="mr-2 h-4 w-4" /> Mark as Under Review
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    className={`w-full ${application.status === 'rejected' ? 'bg-red-500 hover:bg-red-600 text-white' : ''}`}
+                    onClick={() => handleStatusChange('rejected')}
+                  >
+                    <XCircle className="mr-2 h-4 w-4" /> Reject
+                  </Button>
+                </div>
+              </CardContent>
+              <CardFooter>
+                <div className="text-sm text-muted-foreground">
+                  <p>All status changes are logged and cannot be deleted.</p>
+                </div>
+              </CardFooter>
+            </Card>
+            
+            <Card className="mt-6">
+              <CardHeader>
+                <CardTitle>Quick Actions</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  <Button variant="outline" className="w-full justify-start">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                    </svg>
+                    Email Applicant
+                  </Button>
+                  <Button variant="outline" className="w-full justify-start">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                    </svg>
+                    Print Application
+                  </Button>
+                  <Button variant="outline" className="w-full justify-start">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
+                    </svg>
+                    Download Documents
+                  </Button>
                 </div>
               </CardContent>
             </Card>
           </div>
         </div>
       </div>
-    </div>
+    </AdminLayout>
   );
 };
 

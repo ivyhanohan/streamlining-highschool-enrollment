@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,6 +19,16 @@ const formSchema = z.object({
 
 type FormValues = z.infer<typeof formSchema>;
 
+// Mock registered users - in a real app, this would come from a database
+const registeredUsers = [
+  // Admin user
+  { email: "admin@school.edu", password: "admin123", role: "admin" },
+  
+  // Mock registered students - these would be added when students register
+  { email: "john.doe@example.com", password: "password123", role: "student" },
+  { email: "jane.smith@example.com", password: "password123", role: "student" }
+];
+
 const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const { toast } = useToast();
@@ -33,27 +43,55 @@ const Login = () => {
     },
   });
 
+  // Check if there are registered users from localStorage on component mount
+  useEffect(() => {
+    const storedUsers = localStorage.getItem('registeredUsers');
+    if (storedUsers) {
+      const parsedUsers = JSON.parse(storedUsers);
+      // We don't overwrite the admin user, just add the stored users to our validation list
+    }
+  }, []);
+
   const onSubmit = (values: FormValues) => {
-    // Mock login functionality
-    console.log("Login attempt:", values);
+    // Check for valid users
+    const user = registeredUsers.find(
+      u => u.email === values.email && u.password === values.password
+    );
     
-    // Check for admin credentials
-    if (values.email === "admin@school.edu" && values.password === "admin123") {
-      toast({
-        title: "Admin Login Successful",
-        description: "Welcome to the admin dashboard",
-      });
-      navigate("/admin/dashboard");
-      return;
+    // Check registeredUsers in localStorage as well
+    const storedUsers = localStorage.getItem('registeredUsers');
+    let localStorageUser = null;
+    
+    if (storedUsers) {
+      const parsedUsers = JSON.parse(storedUsers);
+      localStorageUser = parsedUsers.find(
+        (u: any) => u.email === values.email && u.password === values.password
+      );
     }
     
-    // Mock student login (in a real app, this would validate against a database)
-    if (values.email.includes("@") && values.password.length >= 6) {
-      toast({
-        title: "Login Successful",
-        description: "Welcome back!",
-      });
-      navigate("/student/welcome");
+    // If user found in hardcoded list or localStorage
+    if (user || localStorageUser) {
+      const validUser = user || localStorageUser;
+      
+      // Set user in localStorage for session management
+      localStorage.setItem('currentUser', JSON.stringify({
+        email: validUser.email,
+        role: validUser.role || 'student'
+      }));
+      
+      if (validUser.role === 'admin' || user?.email === 'admin@school.edu') {
+        toast({
+          title: "Admin Login Successful",
+          description: "Welcome to the admin dashboard",
+        });
+        navigate("/admin/dashboard");
+      } else {
+        toast({
+          title: "Login Successful",
+          description: "Welcome back!",
+        });
+        navigate("/student/welcome");
+      }
     } else {
       toast({
         title: "Login Failed",
@@ -123,11 +161,11 @@ const Login = () => {
                 )}
               />
               
-              {/* <div className="bg-blue-50 p-3 rounded-md border border-blue-100">
+              <div className="bg-blue-50 p-3 rounded-md border border-blue-100">
                 <p className="text-sm text-blue-700">
                   <strong>Admin Login:</strong> admin@school.edu / admin123
                 </p>
-              </div> */}
+              </div>
               
               <Button type="submit" className="w-full">
                 <LogIn className="mr-2 h-4 w-4" /> Log in
