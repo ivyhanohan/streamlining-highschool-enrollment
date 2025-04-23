@@ -12,7 +12,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Eye, EyeOff, LogIn } from 'lucide-react';
 
 const formSchema = z.object({
-  email: z.string().min(1, { message: "Email is required" }).email({ message: "Please enter a valid email address" }),
+  email: z.string().min(1, { message: "Email is required" }),
   password: z.string().min(1, { message: "Password is required" }),
 });
 
@@ -52,11 +52,14 @@ const Login = () => {
 
     // Check if it's a registered student
     const registeredUsers = JSON.parse(localStorage.getItem('registeredUsers') || '[]');
+    console.log("Registered users:", registeredUsers);
+    
     const user = registeredUsers.find(
       (u: any) => u.email === values.email && u.password === values.password
     );
 
     if (user) {
+      console.log("User found:", user);
       localStorage.setItem('currentUser', JSON.stringify({
         email: user.email,
         firstName: user.firstName,
@@ -71,6 +74,7 @@ const Login = () => {
       
       navigate("/student/welcome");
     } else {
+      console.log("Login failed - no matching user found");
       toast({
         title: "Login Failed",
         description: "Invalid email or password. Please try again.",
@@ -105,7 +109,7 @@ const Login = () => {
                   <FormItem>
                     <FormLabel>Email</FormLabel>
                     <FormControl>
-                      <Input placeholder="" {...field} />
+                      <Input placeholder="Enter your email" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -122,7 +126,7 @@ const Login = () => {
                       <div className="relative">
                         <Input 
                           type={showPassword ? "text" : "password"} 
-                          placeholder="" 
+                          placeholder="Enter your password" 
                           {...field} 
                         />
                         <button 

@@ -27,6 +27,7 @@ export function RegisterForm() {
   });
 
   const onSubmit = (values: RegisterFormValues) => {
+    console.log("Registration form submitted:", values);
     const { confirmPassword, ...userData } = values;
     
     const userWithRole = {
@@ -54,6 +55,8 @@ export function RegisterForm() {
     // Add the new user to the existing users and save back to localStorage
     existingUsers.push(userWithRole);
     localStorage.setItem('registeredUsers', JSON.stringify(existingUsers));
+    
+    console.log("Updated registered users:", JSON.parse(localStorage.getItem('registeredUsers') || '[]'));
     
     // Also set as current user (auto-login)
     localStorage.setItem('currentUser', JSON.stringify({
@@ -84,7 +87,7 @@ export function RegisterForm() {
               <FormItem>
                 <FormLabel>First Name</FormLabel>
                 <FormControl>
-                  <Input placeholder="" {...field} />
+                  <Input placeholder="Enter your first name" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -98,7 +101,7 @@ export function RegisterForm() {
               <FormItem>
                 <FormLabel>Last Name</FormLabel>
                 <FormControl>
-                  <Input placeholder="" {...field} />
+                  <Input placeholder="Enter your last name" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -113,7 +116,7 @@ export function RegisterForm() {
             <FormItem>
               <FormLabel>Email</FormLabel>
               <FormControl>
-                <Input placeholder="" {...field} />
+                <Input placeholder="Enter your email" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -130,7 +133,7 @@ export function RegisterForm() {
                 <div className="relative">
                   <Input 
                     type={showPassword ? "text" : "password"} 
-                    placeholder="" 
+                    placeholder="Create a password" 
                     {...field} 
                   />
                   <button 
@@ -154,7 +157,7 @@ export function RegisterForm() {
             <FormItem>
               <FormLabel>Confirm Password</FormLabel>
               <FormControl>
-                <Input type="password" placeholder="" {...field} />
+                <Input type="password" placeholder="Confirm your password" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
