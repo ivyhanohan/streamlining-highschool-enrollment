@@ -49,6 +49,8 @@ export function RegisterForm() {
       return;
     }
     
+    console.log("Registering new user:", values.email);
+    
     // Add the new user to the existing users and save back to localStorage
     existingUsers.push(userWithRole);
     localStorage.setItem('registeredUsers', JSON.stringify(existingUsers));

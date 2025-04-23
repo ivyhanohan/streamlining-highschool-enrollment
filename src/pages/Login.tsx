@@ -32,6 +32,8 @@ const Login = () => {
   });
 
   const onSubmit = (values: FormValues) => {
+    console.log("Login attempt:", values.email);
+    
     // Check if it's the admin
     if (values.email === "admin@school.edu" && values.password === "admin123") {
       localStorage.setItem('currentUser', JSON.stringify({
