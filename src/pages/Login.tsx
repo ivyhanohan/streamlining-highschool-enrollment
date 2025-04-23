@@ -12,8 +12,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Eye, EyeOff, LogIn } from 'lucide-react';
 
 const formSchema = z.object({
-  email: z.string().min(1, { message: "Email is required" }),
-  password: z.string().min(6, { message: "Password must be at least 6 characters" }),
+  email: z.string().min(1, { message: "Email is required" }).email({ message: "Please enter a valid email address" }),
+  password: z.string().min(1, { message: "Password is required" }),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -38,10 +38,12 @@ const Login = () => {
         email: values.email,
         role: 'admin'
       }));
+      
       toast({
         title: "Admin Login Successful",
         description: "Welcome to the admin dashboard",
       });
+      
       navigate("/admin/dashboard");
       return;
     }
@@ -59,10 +61,12 @@ const Login = () => {
         lastName: user.lastName,
         role: 'student'
       }));
+      
       toast({
         title: "Login Successful",
         description: "Welcome back!",
       });
+      
       navigate("/student/welcome");
     } else {
       toast({
