@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useForm } from "react-hook-form";
@@ -27,20 +26,17 @@ export function RegisterForm() {
   });
 
   const onSubmit = (values: RegisterFormValues) => {
-    console.log("Registration form submitted:", values);
     const { confirmPassword, ...userData } = values;
-    
+
     const userWithRole = {
       ...userData,
       role: 'student'
     };
-    
-    // Get existing registered users from localStorage
+
     const existingUsers = JSON.parse(localStorage.getItem('registeredUsers') || '[]');
-    
-    // Check if a user with this email already exists
+
     const userExists = existingUsers.some((user: any) => user.email === values.email);
-    
+
     if (userExists) {
       toast({
         title: "Registration Failed",
@@ -49,16 +45,10 @@ export function RegisterForm() {
       });
       return;
     }
-    
-    console.log("Registering new user:", values.email);
-    
-    // Add the new user to the existing users and save back to localStorage
+
     existingUsers.push(userWithRole);
     localStorage.setItem('registeredUsers', JSON.stringify(existingUsers));
-    
-    console.log("Updated registered users:", JSON.parse(localStorage.getItem('registeredUsers') || '[]'));
-    
-    // Also set as current user (auto-login)
+
     localStorage.setItem('currentUser', JSON.stringify({
       email: values.email,
       firstName: values.firstName,
@@ -70,7 +60,7 @@ export function RegisterForm() {
       title: "Registration Successful",
       description: "Your account has been created successfully.",
     });
-    
+
     navigate("/student/welcome");
   };
 
@@ -93,7 +83,6 @@ export function RegisterForm() {
               </FormItem>
             )}
           />
-          
           <FormField
             control={form.control}
             name="lastName"
@@ -108,7 +97,6 @@ export function RegisterForm() {
             )}
           />
         </div>
-        
         <FormField
           control={form.control}
           name="email"
@@ -122,7 +110,6 @@ export function RegisterForm() {
             </FormItem>
           )}
         />
-        
         <FormField
           control={form.control}
           name="password"
@@ -149,7 +136,6 @@ export function RegisterForm() {
             </FormItem>
           )}
         />
-        
         <FormField
           control={form.control}
           name="confirmPassword"
@@ -163,7 +149,6 @@ export function RegisterForm() {
             </FormItem>
           )}
         />
-        
         <Button type="submit" className="w-full">
           <UserPlus className="mr-2 h-4 w-4" /> Register
         </Button>

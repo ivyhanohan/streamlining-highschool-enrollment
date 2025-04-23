@@ -11,6 +11,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Eye, EyeOff, LogIn } from 'lucide-react';
 
+// Minimum validation to avoid blank fields
 const formSchema = z.object({
   email: z.string().min(1, { message: "Email is required" }),
   password: z.string().min(1, { message: "Password is required" }),
@@ -31,50 +32,36 @@ const Login = () => {
     },
   });
 
+  // --- Only allow admin or students with registration in localStorage ---
   const onSubmit = (values: FormValues) => {
-    console.log("Login attempt:", values.email);
-    
-    // Check if it's the admin
+    // Hardcoded admin credentials
     if (values.email === "admin@school.edu" && values.password === "admin123") {
       localStorage.setItem('currentUser', JSON.stringify({
         email: values.email,
         role: 'admin'
       }));
-      
-      toast({
-        title: "Admin Login Successful",
-        description: "Welcome to the admin dashboard",
-      });
-      
+      toast({ title: "Admin Login Successful", description: "Welcome to the admin dashboard" });
       navigate("/admin/dashboard");
       return;
     }
 
-    // Check if it's a registered student
+    // Check against registered users for student login
     const registeredUsers = JSON.parse(localStorage.getItem('registeredUsers') || '[]');
-    console.log("Registered users:", registeredUsers);
-    
     const user = registeredUsers.find(
       (u: any) => u.email === values.email && u.password === values.password
     );
 
     if (user) {
-      console.log("User found:", user);
+      // Save current user for authenticated pages
       localStorage.setItem('currentUser', JSON.stringify({
         email: user.email,
         firstName: user.firstName,
         lastName: user.lastName,
-        role: 'student'
+        role: user.role || "student"
       }));
-      
-      toast({
-        title: "Login Successful",
-        description: "Welcome back!",
-      });
-      
+      toast({ title: "Login Successful", description: "Welcome back!" });
       navigate("/student/welcome");
     } else {
-      console.log("Login failed - no matching user found");
       toast({
         title: "Login Failed",
         description: "Invalid email or password. Please try again.",
@@ -115,7 +102,6 @@ const Login = () => {
                   </FormItem>
                 )}
               />
-              
               <FormField
                 control={form.control}
                 name="password"
@@ -142,13 +128,11 @@ const Login = () => {
                   </FormItem>
                 )}
               />
-              
               <div className="bg-blue-50 p-3 rounded-md border border-blue-100">
                 <p className="text-sm text-blue-700">
                   <strong>Admin Login:</strong> admin@school.edu / admin123
                 </p>
               </div>
-              
               <Button type="submit" className="w-full">
                 <LogIn className="mr-2 h-4 w-4" /> Log in
               </Button>
