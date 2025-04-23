@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
@@ -34,6 +33,8 @@ const Login = () => {
 
   // --- Only allow admin or students with registration in localStorage ---
   const onSubmit = (values: FormValues) => {
+    console.log("Login attempt:", values);
+    
     // Hardcoded admin credentials
     if (values.email === "admin@school.edu" && values.password === "admin123") {
       localStorage.setItem('currentUser', JSON.stringify({
@@ -59,8 +60,21 @@ const Login = () => {
         lastName: user.lastName,
         role: user.role || "student"
       }));
+
+      // Check if the user has already completed enrollment
+      const userId = user.email;
+      const enrollmentKey = `enrollments-${userId}`;
+      const userHasEnrollment = localStorage.getItem(enrollmentKey);
+      
       toast({ title: "Login Successful", description: "Welcome back!" });
-      navigate("/student/welcome");
+      
+      if (userHasEnrollment) {
+        // If user has completed enrollment, go directly to dashboard
+        navigate("/student/dashboard");
+      } else {
+        // Otherwise, go to welcome page to start enrollment
+        navigate("/student/welcome");
+      }
     } else {
       toast({
         title: "Login Failed",
