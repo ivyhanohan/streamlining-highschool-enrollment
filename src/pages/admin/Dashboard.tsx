@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
@@ -22,7 +21,6 @@ import {
   Calendar
 } from 'lucide-react';
 
-// Type for student applications
 type StudentApplication = {
   id: string;
   firstName: string;
@@ -35,7 +33,6 @@ type StudentApplication = {
   documents?: any[];
 };
 
-// Initial mock data for students if no real data exists
 const initialStudentApplications = [
   { 
     id: "APP-2023-0001", 
@@ -89,7 +86,6 @@ const initialStudentApplications = [
   },
 ];
 
-// Type definition for summary data
 type SummaryData = {
   totalApplications: number;
   pending: number;
@@ -132,19 +128,14 @@ const AdminDashboard = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
   
-  // Load applications data on component mount and calculate summary stats
   useEffect(() => {
-    // Try to get enrollment data from localStorage
     const enrollmentsData = localStorage.getItem('enrollments');
     
     let applications: StudentApplication[] = [];
     
     if (enrollmentsData) {
       try {
-        // Parse the enrollment data
         const parsedEnrollments = JSON.parse(enrollmentsData);
-        
-        // Map the enrollments to the expected format
         applications = parsedEnrollments.map((enrollment: any) => ({
           id: enrollment.id || `APP-${Date.now()}`,
           firstName: enrollment.firstName || "",
@@ -161,19 +152,16 @@ const AdminDashboard = () => {
         applications = [...initialStudentApplications];
       }
     } else {
-      // Use mock data if no real data exists
       applications = [...initialStudentApplications];
     }
     
     setStudentApplications(applications);
     setFilteredStudents(applications);
     
-    // Calculate summary data
     const summary = calculateSummaryData(applications);
     setSummaryData(summary);
   }, []);
   
-  // Calculate summary stats from applications
   const calculateSummaryData = (applications: StudentApplication[]): SummaryData => {
     const today = new Date().toISOString().split('T')[0];
     const lastWeek = new Date();
@@ -260,14 +248,12 @@ const AdminDashboard = () => {
   };
   
   const handleStatusChange = (id: string, newStatus: string) => {
-    // Update the status in our application array
     const updatedStudents = studentApplications.map(student => 
       student.id === id ? { ...student, status: newStatus } : student
     );
     
     setStudentApplications(updatedStudents);
     
-    // Also update the status in localStorage
     updateEnrollmentStatus(id, newStatus);
     
     toast({
@@ -275,7 +261,6 @@ const AdminDashboard = () => {
       description: `Application ${id} has been ${newStatus.toLowerCase()}.`,
     });
     
-    // Update displayed students and summary data
     filterByStatus(selectedStatus);
     setSummaryData(calculateSummaryData(updatedStudents));
   };
@@ -295,7 +280,6 @@ const AdminDashboard = () => {
         
         localStorage.setItem('enrollments', JSON.stringify(updatedEnrollments));
         
-        // Also update in currentStudentEnrollment if it's the same ID
         const currentEnrollment = localStorage.getItem('currentStudentEnrollment');
         if (currentEnrollment) {
           const parsedCurrent = JSON.parse(currentEnrollment);
@@ -311,12 +295,10 @@ const AdminDashboard = () => {
   };
   
   const handleDelete = (id: string) => {
-    // Remove the enrollment from our application array
     const updatedStudents = studentApplications.filter(student => student.id !== id);
     
     setStudentApplications(updatedStudents);
     
-    // Also remove from localStorage
     deleteEnrollment(id);
     
     toast({
@@ -325,7 +307,6 @@ const AdminDashboard = () => {
       variant: "destructive",
     });
     
-    // Update displayed students and summary data
     filterByStatus(selectedStatus);
     setSummaryData(calculateSummaryData(updatedStudents));
   };
@@ -340,7 +321,6 @@ const AdminDashboard = () => {
         
         localStorage.setItem('enrollments', JSON.stringify(updatedEnrollments));
         
-        // Also remove from currentStudentEnrollment if it's the same ID
         const currentEnrollment = localStorage.getItem('currentStudentEnrollment');
         if (currentEnrollment) {
           const parsedCurrent = JSON.parse(currentEnrollment);
@@ -375,9 +355,12 @@ const AdminDashboard = () => {
     }
   };
   
+  const handleEditApplication = (id: string) => {
+    navigate(`/admin/application/${id}`);
+  };
+  
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-100">
-      {/* Admin Header */}
       <header className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex justify-between items-center">
@@ -396,7 +379,6 @@ const AdminDashboard = () => {
       </header>
       
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Summary Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <Card>
             <CardContent className="p-6">
@@ -455,9 +437,7 @@ const AdminDashboard = () => {
           </Card>
         </div>
         
-        {/* Main Content */}
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-          {/* Sidebar */}
           <div className="lg:col-span-1 space-y-6">
             <Card>
               <CardHeader>
@@ -610,7 +590,6 @@ const AdminDashboard = () => {
             </Card>
           </div>
           
-          {/* Student Applications Table */}
           <div className="lg:col-span-3">
             <Card className="shadow-lg">
               <CardHeader>
@@ -694,8 +673,8 @@ const AdminDashboard = () => {
                                 <Button 
                                   variant="ghost" 
                                   size="sm" 
-                                  className="h-8 w-8 p-0"
-                                  onClick={() => navigate(`/admin/application/${student.id}`)}
+                                  className="h-8 w-8 p-0 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                                  onClick={() => handleEditApplication(student.id)}
                                 >
                                   <Edit className="h-4 w-4" />
                                 </Button>
