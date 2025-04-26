@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
@@ -33,7 +32,6 @@ const Dashboard = () => {
   const { toast } = useToast();
   
   useEffect(() => {
-    // Get current user from localStorage
     const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
     const userId = currentUser.email || localStorage.getItem('currentUserId') || 'demo-user';
     
@@ -41,11 +39,9 @@ const Dashboard = () => {
     
     const fetchEnrollmentData = async () => {
       try {
-        // First check in enrollments array for this user's enrollment
         const allEnrollments = JSON.parse(localStorage.getItem('enrollments') || '[]');
         const userEnrollment = allEnrollments.find((e: any) => e.userId === userId || e.email === userId);
         
-        // Then check for direct enrollment key
         const enrollmentKey = `enrollments-${userId}`;
         const directEnrollmentData = localStorage.getItem(enrollmentKey);
         
@@ -56,7 +52,6 @@ const Dashboard = () => {
         } else if (directEnrollmentData) {
           setApplicationStatus(JSON.parse(directEnrollmentData));
         } else {
-          // If not in localStorage, use mock data
           const mockData = {
             id: "APP-2023-12345",
             firstName: currentUser.firstName || "John",
@@ -93,7 +88,6 @@ const Dashboard = () => {
   }, [toast]);
   
   const handleLogout = () => {
-    // Clear user session but keep enrollment data
     localStorage.removeItem('currentUser');
     localStorage.removeItem('currentUserId');
     toast({ title: "Logged Out", description: "You have been logged out successfully." });
@@ -108,6 +102,30 @@ const Dashboard = () => {
     return <div className="flex justify-center items-center min-h-screen">No enrollment data found.</div>;
   }
   
+  const getStatusColor = (status: string) => {
+    switch (status.toLowerCase()) {
+      case 'approved':
+        return 'border-green-500 bg-green-50';
+      case 'rejected':
+        return 'border-red-500 bg-red-50';
+      case 'pending':
+      default:
+        return 'border-amber-500 bg-amber-50';
+    }
+  };
+
+  const getStatusTextColor = (status: string) => {
+    switch (status.toLowerCase()) {
+      case 'approved':
+        return 'text-green-700';
+      case 'rejected':
+        return 'text-red-700';
+      case 'pending':
+      default:
+        return 'text-amber-700';
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-12 px-4">
       <div className="max-w-6xl mx-auto">
@@ -123,12 +141,13 @@ const Dashboard = () => {
           </div>
         </div>
         
-        {/* Status Summary Card */}
-        <Card className="mb-8 shadow-lg border-l-4 border-amber-500">
+        <Card className={`mb-8 shadow-lg border-l-4 ${getStatusColor(applicationStatus.status)}`}>
           <CardContent className="pt-6">
             <div className="flex flex-col md:flex-row justify-between">
               <div>
-                <h2 className="text-2xl font-bold text-amber-700">Application Status: {applicationStatus.status}</h2>
+                <h2 className={`text-2xl font-bold ${getStatusTextColor(applicationStatus.status)}`}>
+                  Application Status: {applicationStatus.status}
+                </h2>
                 <p className="text-muted-foreground mt-1">Application ID: {applicationStatus.id}</p>
               </div>
               
@@ -146,7 +165,6 @@ const Dashboard = () => {
           </CardContent>
         </Card>
         
-        {/* Application Details */}
         <Card className="shadow-lg">
           <CardHeader>
             <CardTitle>Application Details</CardTitle>
@@ -156,7 +174,7 @@ const Dashboard = () => {
           </CardHeader>
           <CardContent>
             <div className="space-y-6">
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <p className="text-sm text-muted-foreground">Academic Year</p>
                   <p className="font-medium">{applicationStatus.academicYear}</p>
@@ -168,7 +186,7 @@ const Dashboard = () => {
               </div>
               
               <div>
-                <h3 className="font-medium mb-2">Document Status</h3>
+                <h3 className="font-medium mb-4">Document Status</h3>
                 <Table>
                   <TableHeader>
                     <TableRow>
