@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
@@ -61,19 +62,27 @@ const Login = () => {
         role: user.role || "student"
       }));
       
-      // Set current user ID for the Dashboard
+      // Always set currentUserId for the Dashboard
       localStorage.setItem('currentUserId', user.email);
 
       // Check if the user has already completed enrollment
       const userId = user.email;
-      const enrollmentKey = `enrollments-${userId}`;
-      const userHasEnrollment = localStorage.getItem(enrollmentKey);
       
-      console.log("User enrollment check:", { userId, userHasEnrollment });
+      // First check in enrollments array for this user's enrollment
+      const allEnrollments = JSON.parse(localStorage.getItem('enrollments') || '[]');
+      const userEnrollment = allEnrollments.find((e: any) => e.userId === userId || e.email === userId);
+      
+      // Then check for direct enrollment key
+      const enrollmentKey = `enrollments-${userId}`;
+      const directEnrollment = localStorage.getItem(enrollmentKey);
+      
+      const hasCompletedEnrollment = userEnrollment || directEnrollment;
+      
+      console.log("User enrollment check:", { userId, hasCompletedEnrollment });
       
       toast({ title: "Login Successful", description: "Welcome back!" });
       
-      if (userHasEnrollment) {
+      if (hasCompletedEnrollment) {
         // If user has completed enrollment, go directly to dashboard
         navigate("/student/dashboard");
       } else {

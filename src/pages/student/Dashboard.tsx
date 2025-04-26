@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
@@ -34,20 +35,26 @@ const Dashboard = () => {
   useEffect(() => {
     // Get current user from localStorage
     const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
-    const userId = currentUser.email || 'demo-user';
+    const userId = currentUser.email || localStorage.getItem('currentUserId') || 'demo-user';
     
     console.log("Dashboard: Loading data for user", userId);
     
     const fetchEnrollmentData = async () => {
       try {
-        // Try to get enrollment data from localStorage
+        // First check in enrollments array for this user's enrollment
+        const allEnrollments = JSON.parse(localStorage.getItem('enrollments') || '[]');
+        const userEnrollment = allEnrollments.find((e: any) => e.userId === userId || e.email === userId);
+        
+        // Then check for direct enrollment key
         const enrollmentKey = `enrollments-${userId}`;
-        const storedEnrollmentData = localStorage.getItem(enrollmentKey);
+        const directEnrollmentData = localStorage.getItem(enrollmentKey);
         
-        console.log("Dashboard: Found enrollment data?", !!storedEnrollmentData);
+        console.log("Dashboard: Found enrollment data?", !!userEnrollment || !!directEnrollmentData);
         
-        if (storedEnrollmentData) {
-          setApplicationStatus(JSON.parse(storedEnrollmentData));
+        if (userEnrollment) {
+          setApplicationStatus(userEnrollment);
+        } else if (directEnrollmentData) {
+          setApplicationStatus(JSON.parse(directEnrollmentData));
         } else {
           // If not in localStorage, use mock data
           const mockData = {
