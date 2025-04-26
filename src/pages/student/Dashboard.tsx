@@ -3,8 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Clock, Calendar, CheckCircle, AlertCircle, Home } from 'lucide-react';
-import { doc, getDoc } from '@/lib/firebase';
+import { Clock, Calendar, CheckCircle, AlertCircle, Home, LogOut } from 'lucide-react';
+import { useToast } from "@/hooks/use-toast";
 
 // Type for application status
 type EnrollmentData = {
@@ -29,57 +29,53 @@ const Dashboard = () => {
   const navigate = useNavigate();
   const [applicationStatus, setApplicationStatus] = useState<EnrollmentData | null>(null);
   const [loading, setLoading] = useState(true);
+  const { toast } = useToast();
   
   useEffect(() => {
-    // Get user ID (in a real app, this would come from authentication)
-    const userId = localStorage.getItem('currentUserId') || 'demo-user';
+    // Get current user from localStorage
+    const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
+    const userId = currentUser.email || 'demo-user';
+    
+    console.log("Dashboard: Loading data for user", userId);
     
     const fetchEnrollmentData = async () => {
       try {
-        // Try to get enrollment data from localStorage first
-        const storedEnrollmentData = localStorage.getItem(`enrollments-${userId}`);
+        // Try to get enrollment data from localStorage
+        const enrollmentKey = `enrollments-${userId}`;
+        const storedEnrollmentData = localStorage.getItem(enrollmentKey);
+        
+        console.log("Dashboard: Found enrollment data?", !!storedEnrollmentData);
         
         if (storedEnrollmentData) {
           setApplicationStatus(JSON.parse(storedEnrollmentData));
         } else {
           // If not in localStorage, use mock data
-          setApplicationStatus({
+          const mockData = {
             id: "APP-2023-12345",
-            firstName: "John",
-            lastName: "Doe",
-            email: "john.doe@example.com",
+            firstName: currentUser.firstName || "John",
+            lastName: currentUser.lastName || "Doe",
+            email: userId,
             status: "Pending Review",
-            submittedDate: "2023-05-15",
-            lastUpdated: "2023-05-16",
+            submittedDate: new Date().toISOString().split('T')[0],
+            lastUpdated: new Date().toISOString().split('T')[0],
             academicYear: "2023-2024",
             gradeLevel: "Grade 9",
             documents: [
-              { id: 1, name: "Birth Certificate", status: "Verified", date: "2023-05-16" },
-              { id: 2, name: "Report Card / Form 138", status: "Pending", date: "2023-05-15" },
-              { id: 3, name: "Certificate of Good Moral Character", status: "Pending", date: "2023-05-15" },
-              { id: 4, name: "2x2 ID Pictures", status: "Pending", date: "2023-05-15" },
+              { id: 1, name: "Birth Certificate", status: "Verified", date: new Date().toISOString().split('T')[0] },
+              { id: 2, name: "Report Card / Form 138", status: "Pending", date: new Date().toISOString().split('T')[0] },
+              { id: 3, name: "Certificate of Good Moral Character", status: "Pending", date: new Date().toISOString().split('T')[0] },
+              { id: 4, name: "2x2 ID Pictures", status: "Pending", date: new Date().toISOString().split('T')[0] },
             ]
-          });
+          };
+          
+          setApplicationStatus(mockData);
         }
       } catch (error) {
         console.error("Error fetching enrollment data:", error);
-        // Use mock data as fallback
-        setApplicationStatus({
-          id: "APP-2023-12345",
-          firstName: "John",
-          lastName: "Doe",
-          email: "john.doe@example.com",
-          status: "Pending Review",
-          submittedDate: "2023-05-15",
-          lastUpdated: "2023-05-16",
-          academicYear: "2023-2024",
-          gradeLevel: "Grade 9",
-          documents: [
-            { id: 1, name: "Birth Certificate", status: "Verified", date: "2023-05-16" },
-            { id: 2, name: "Report Card / Form 138", status: "Pending", date: "2023-05-15" },
-            { id: 3, name: "Certificate of Good Moral Character", status: "Pending", date: "2023-05-15" },
-            { id: 4, name: "2x2 ID Pictures", status: "Pending", date: "2023-05-15" },
-          ]
+        toast({
+          title: "Error Loading Data",
+          description: "Could not load your enrollment details. Please try again.",
+          variant: "destructive",
         });
       } finally {
         setLoading(false);
@@ -87,7 +83,15 @@ const Dashboard = () => {
     };
     
     fetchEnrollmentData();
-  }, []);
+  }, [toast]);
+  
+  const handleLogout = () => {
+    // Clear user session but keep enrollment data
+    localStorage.removeItem('currentUser');
+    localStorage.removeItem('currentUserId');
+    toast({ title: "Logged Out", description: "You have been logged out successfully." });
+    navigate("/login");
+  };
   
   if (loading) {
     return <div className="flex justify-center items-center min-h-screen">Loading...</div>;
@@ -102,9 +106,14 @@ const Dashboard = () => {
       <div className="max-w-6xl mx-auto">
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-3xl font-bold">Student Dashboard</h1>
-          <Button variant="outline" onClick={() => navigate("/")}>
-            <Home className="mr-2 h-4 w-4" /> Home
-          </Button>
+          <div className="flex space-x-3">
+            <Button variant="outline" onClick={() => navigate("/")}>
+              <Home className="mr-2 h-4 w-4" /> Home
+            </Button>
+            <Button variant="outline" onClick={handleLogout}>
+              <LogOut className="mr-2 h-4 w-4" /> Logout
+            </Button>
+          </div>
         </div>
         
         {/* Status Summary Card */}
@@ -147,7 +156,7 @@ const Dashboard = () => {
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Grade Level</p>
-                  <p className="font-medium">Grade {applicationStatus.gradeLevel}</p>
+                  <p className="font-medium">{applicationStatus.gradeLevel}</p>
                 </div>
               </div>
               

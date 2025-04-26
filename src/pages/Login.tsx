@@ -60,11 +60,16 @@ const Login = () => {
         lastName: user.lastName,
         role: user.role || "student"
       }));
+      
+      // Set current user ID for the Dashboard
+      localStorage.setItem('currentUserId', user.email);
 
       // Check if the user has already completed enrollment
       const userId = user.email;
       const enrollmentKey = `enrollments-${userId}`;
       const userHasEnrollment = localStorage.getItem(enrollmentKey);
+      
+      console.log("User enrollment check:", { userId, userHasEnrollment });
       
       toast({ title: "Login Successful", description: "Welcome back!" });
       
